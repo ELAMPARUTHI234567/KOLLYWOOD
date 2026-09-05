@@ -4,12 +4,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def _build_db_uri():
-    """Build database URI. Uses SQLite fallback if USE_SQLITE=true or DB_PASSWORD is missing."""
+    """Build database URI. Supports DATABASE_URL, MYSQL_URL, discrete DB_* vars, or local SQLite fallback."""
     use_sqlite = os.getenv('USE_SQLITE', '').lower() in ('1', 'true', 'yes')
     if use_sqlite:
         db_path = os.path.join(os.path.dirname(__file__), 'kolloywood.db')
         print(f"[INFO] Using SQLite database: {db_path}")
         return f"sqlite:///{db_path}"
+
+    # Check for direct connection URL from cloud providers (Railway, Render, Aiven, etc.)
+    db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL')
+    if db_url:
+        if db_url.startswith('mysql://'):
+            db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+        return db_url
 
     host     = os.getenv('DB_HOST', 'localhost')
     port     = os.getenv('DB_PORT', '3306')

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// When VITE_BACKEND_URL is empty, axios uses relative URLs.
+// When VITE_BACKEND_URL / VITE_API_URL is empty, axios uses relative URLs.
 // Vite dev proxy forwards /api/* to http://localhost:5000
-// In production, set VITE_BACKEND_URL to the backend host.
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+// In production, set VITE_BACKEND_URL or VITE_API_URL to the deployed backend host.
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
