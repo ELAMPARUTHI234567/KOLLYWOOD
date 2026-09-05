@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,17 +13,17 @@ def _build_db_uri():
         return f"sqlite:///{db_path}"
 
     # Check for direct connection URL from cloud providers (Railway, Render, Aiven, etc.)
-    db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL')
+    db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL') or os.getenv('MYSQLURL')
     if db_url:
         if db_url.startswith('mysql://'):
             db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
         return db_url
 
-    host     = os.getenv('DB_HOST', 'localhost')
-    port     = os.getenv('DB_PORT', '3306')
-    user     = os.getenv('DB_USER', 'root')
-    password = os.getenv('DB_PASSWORD', '')
-    name     = os.getenv('DB_NAME', 'kolloywood')
+    host     = os.getenv('MYSQLHOST', os.getenv('DB_HOST', 'localhost'))
+    port     = os.getenv('MYSQLPORT', os.getenv('DB_PORT', '3306'))
+    user     = os.getenv('MYSQLUSER', os.getenv('DB_USER', 'root'))
+    password = os.getenv('MYSQLPASSWORD', os.getenv('DB_PASSWORD', ''))
+    name     = os.getenv('MYSQLDATABASE', os.getenv('DB_NAME', 'kolloywood'))
     return f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
 
@@ -45,7 +46,7 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(',')
 
     # SocketIO
-    SOCKETIO_ASYNC_MODE = 'threading'
+    SOCKETIO_ASYNC_MODE = os.getenv('SOCKETIO_ASYNC_MODE', 'threading' if sys.platform == 'win32' else 'eventlet')
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5173')
 
     # Game defaults

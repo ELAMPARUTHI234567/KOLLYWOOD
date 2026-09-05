@@ -38,10 +38,11 @@ def create_app():
     app.register_blueprint(game_bp)
 
     # ── Socket.IO ─────────────────────────────────────────────────────────────
+    async_mode = app.config.get('SOCKETIO_ASYNC_MODE', 'threading' if sys.platform == 'win32' else 'eventlet')
     socketio.init_app(
         app,
         cors_allowed_origins="*",
-        async_mode="threading",
+        async_mode=async_mode,
         logger=False,
         engineio_logger=False,
         ping_timeout=60,
