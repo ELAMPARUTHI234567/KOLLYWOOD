@@ -1,0 +1,76 @@
+.join-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.join-page__bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.join-page__main {
+  padding: 6rem 1rem 3rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.join-page__card {
+  width: 100%;
+  max-width: 520px;
+}
+
+.join-page__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.join-page__icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.join-page__title {
+  font-size: 1.75rem;
+  background: var(--gradient-purple);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.4rem;
+}
+
+.join-page__subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.join-game-id-input {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.join-error {
+  color: var(--accent-red);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+}
+
+.join-submit-btn {
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}

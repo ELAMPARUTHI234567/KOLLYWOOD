@@ -1,0 +1,54 @@
+.avatar-picker__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 0.6rem;
+}
+
+.avatar-picker__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+  font-family: var(--font-main);
+}
+
+.avatar-picker__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(251, 191, 36, 0.4);
+  transform: scale(1.08);
+}
+
+.avatar-picker__item--selected {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.3);
+  color: var(--accent-gold);
+}
+
+.avatar-picker__emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.avatar-picker__name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

@@ -1,0 +1,222 @@
+.waiting-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.waiting-page__bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 10% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 50%, rgba(251, 191, 36, 0.07) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.waiting-page__main {
+  padding: 5.5rem 1rem 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.waiting-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1000px;
+  width: 100%;
+  align-items: start;
+}
+
+/* Info Card */
+.waiting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.waiting-title {
+  font-size: 2rem;
+  text-align: center;
+}
+
+.waiting-game-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(251, 191, 36, 0.07);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.waiting-game-id__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.waiting-game-id__code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.waiting-game-id__text {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent-gold);
+  letter-spacing: 0.15em;
+}
+
+.waiting-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.waiting-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.875rem;
+}
+
+.waiting-stat__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+}
+
+.waiting-stat__value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.waiting-error {
+  color: var(--accent-red);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 0.6rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.waiting-start-btn {
+  width: 100%;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.waiting-for-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+
+.waiting-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border-glass);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Players Card */
+.waiting-players {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.waiting-players__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.waiting-players__header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.waiting-players__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.waiting-player-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.875rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.waiting-player-row--me {
+  background: rgba(251, 191, 36, 0.07);
+  border-color: var(--border-gold);
+}
+
+.waiting-player-row__avatar { font-size: 1.3rem; }
+
+.waiting-player-row__name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ml-host { margin-left: 0.25rem; }
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot--online  { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.status-dot--offline { background: var(--text-muted); }
+
+.waiting-players__empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1.5rem;
+  font-style: italic;
+}
+
+.waiting-players__tip {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.waiting-players__tip strong { color: var(--accent-gold); }
+
+@media (max-width: 768px) {
+  .waiting-layout { grid-template-columns: 1fr; }
+}

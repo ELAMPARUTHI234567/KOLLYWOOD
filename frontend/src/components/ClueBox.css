@@ -1,0 +1,54 @@
+.clue-box {
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  border: 1px solid;
+  transition: var(--transition);
+  flex: 1;
+}
+
+.clue-box--locked {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+  opacity: 0.5;
+}
+
+.clue-box--revealed {
+  background: rgba(251, 191, 36, 0.07);
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.clue-box__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.clue-box__icon {
+  font-size: 1rem;
+}
+
+.clue-box__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-gold);
+}
+
+.clue-box--locked .clue-box__label {
+  color: var(--text-muted);
+}
+
+.clue-box__text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.clue-box__locked-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

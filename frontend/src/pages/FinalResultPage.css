@@ -1,0 +1,91 @@
+.final-page { min-height: 100vh; position: relative; overflow: hidden; }
+
+.final-page__bg {
+  position: fixed; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(251, 191, 36, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
+}
+
+/* Confetti */
+.final-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  animation: particleFloat linear infinite;
+}
+
+.final-header {
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem 2rem;
+  background: rgba(10, 10, 15, 0.7); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glass);
+  position: relative; z-index: 10;
+}
+.final-header__logo { font-size: 1.5rem; }
+
+.final-main {
+  padding: 2rem 1rem 3rem;
+  max-width: 700px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: 2rem;
+  position: relative; z-index: 10;
+}
+
+/* Game Over text */
+.final-gameover { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.final-gameover__icon { font-size: 4rem; }
+.final-gameover__text {
+  font-family: var(--font-display); font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 900;
+  background: var(--gradient-gold); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.1em;
+}
+.final-gameover__sub { color: var(--text-secondary); font-size: 1rem; }
+
+/* Winner card */
+.final-winner {
+  width: 100%; max-width: 360px; text-align: center; padding: 2.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+}
+.final-winner__crown { font-size: 3rem; }
+.final-winner__label {
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--text-muted);
+}
+.final-winner__avatar { font-size: 4rem; line-height: 1; }
+.final-winner__name { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); }
+.final-winner__score {
+  font-family: var(--font-display); font-size: 1.4rem; font-weight: 900;
+  background: var(--gradient-gold); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+/* Leaderboard */
+.final-leaderboard { width: 100%; }
+.final-lb-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+
+.final-lb-list { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.final-lb-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+}
+.final-lb-row--me {
+  background: rgba(251, 191, 36, 0.08); border-color: var(--border-gold);
+}
+.final-lb-rank { min-width: 32px; font-size: 1.1rem; text-align: center; }
+.final-lb-avatar { font-size: 1.3rem; }
+.final-lb-name { flex: 1; font-weight: 600; }
+.final-lb-score { font-weight: 700; color: var(--accent-gold); font-family: var(--font-display); font-size: 1rem; }
+
+/* Actions */
+.final-actions {
+  display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+}
+
+.final-tagline {
+  font-size: 0.95rem; color: var(--text-muted); font-style: italic;
+  text-align: center;
+}
