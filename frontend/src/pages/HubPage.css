@@ -1,0 +1,363 @@
+/* ======================================================
+   HubPage Companion Styles
+   ====================================================== */
+
+.hub-page {
+  min-height: 100vh;
+  position: relative;
+  padding: 3rem 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.hub-page__bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 25%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 75%, rgba(251, 191, 36, 0.08) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hub-page__main {
+  width: 100%;
+  max-width: 820px;
+  position: relative;
+  z-index: 1;
+}
+
+.hub-card {
+  background: rgba(18, 18, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
+  padding: 2rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+}
+
+.hub-card__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hub-card__icon {
+  flex-shrink: 0;
+}
+
+.hub-card__icon.text-gold {
+  color: var(--accent-gold);
+}
+
+.hub-card__icon.text-purple {
+  color: var(--accent-purple);
+}
+
+.hub-card__icon.text-blue {
+  color: var(--accent-blue);
+}
+
+.hub-card__title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+.hub-card__subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+/* Session Box */
+.hub-session-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.hub-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.hub-session-meta {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.hub-player-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 10px;
+}
+
+.hub-player-avatar {
+  font-size: 1.8rem;
+}
+
+.hub-player-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-player-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.hub-player-role {
+  font-size: 0.75rem;
+  color: var(--accent-green);
+}
+
+/* Empty States */
+.hub-empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.hub-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+/* Leaderboard Podium */
+.hub-podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.hub-podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  min-width: 110px;
+}
+
+.hub-podium-slot.rank-1 {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.35);
+  transform: translateY(-10px);
+}
+
+.podium-emoji {
+  font-size: 2rem;
+  margin-bottom: 0.35rem;
+}
+
+.podium-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.podium-pts {
+  font-size: 0.8rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.hub-rules-tip {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+/* Movies Grid */
+.hub-movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.hub-movie-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.hub-movie-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.hub-movie-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  background: rgba(251, 191, 36, 0.12);
+  border-radius: 999px;
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.hub-movie-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.hub-movie-detail {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+/* Timeline Flow in Questions */
+.hub-timeline-overview {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.hub-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 1rem;
+}
+
+.hub-timeline-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.hub-timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  min-width: 85px;
+}
+
+.node-time {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--accent-purple);
+  margin-bottom: 0.2rem;
+}
+
+.node-label {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.node-arrow {
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* Settings List */
+.hub-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hub-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.hub-setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.hub-setting-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.hub-setting-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.badge-purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-gold {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .hub-page {
+    padding: 1.5rem 1rem;
+  }
+  .hub-card {
+    padding: 1.25rem;
+  }
+  .hub-podium {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hub-podium-slot.rank-1 {
+    transform: none;
+    order: -1;
+  }
+  .hub-setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}

@@ -4,6 +4,8 @@
    CSS Variables
    ===================== */
 :root {
+  --sidebar-width: 72px;
+  --mobile-nav-height: 62px;
   --bg-primary: #0a0a0f;
   --bg-secondary: #0f0f1a;
   --bg-card: rgba(255, 255, 255, 0.04);
@@ -326,12 +328,30 @@ h1, h2, h3, h4 {
 }
 
 /* =====================
+   App Layout with Sidebar
+   ===================== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  width: 100%;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+  position: relative;
+  transition: margin-left var(--transition);
+}
+
+/* =====================
    Navbar
    ===================== */
 .navbar {
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--sidebar-width);
   right: 0;
   z-index: 100;
   display: flex;
@@ -341,6 +361,7 @@ h1, h2, h3, h4 {
   background: rgba(10, 10, 15, 0.8);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-glass);
+  transition: left var(--transition);
 }
 
 .navbar-logo {
@@ -458,7 +479,14 @@ h1, h2, h3, h4 {
    Responsive
    ===================== */
 @media (max-width: 768px) {
-  .navbar { padding: 0.75rem 1rem; }
+  .app-main {
+    margin-left: 0;
+    padding-bottom: calc(var(--mobile-nav-height) + 0.75rem);
+  }
+  .navbar {
+    left: 0;
+    padding: 0.75rem 1rem;
+  }
   .card { padding: 1.25rem; }
   .btn-lg { padding: 0.875rem 2rem; font-size: 1rem; }
 }
