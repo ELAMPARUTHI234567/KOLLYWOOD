@@ -89,6 +89,24 @@ def create_app():
                         conn.commit()
                 except Exception:
                     pass
+                    
+                # Safe additive migration for new Auth Columns
+                auth_migrations = [
+                    "ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL",
+                    "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL",
+                    "ALTER TABLE users ADD COLUMN auth_provider ENUM('guest','email') NOT NULL DEFAULT 'guest'",
+                    "ALTER TABLE users ADD COLUMN display_name VARCHAR(100) NULL",
+                    "ALTER TABLE users ADD UNIQUE INDEX idx_users_email (email)"
+                ]
+                with db.engine.connect() as conn:
+                    for sql in auth_migrations:
+                        try:
+                            conn.execute(db.text(sql))
+                            conn.commit()
+                        except Exception:
+                            # Will fail silently if the column/index already exists
+                            pass
+
                 print("[OK] Database tables ready.")
                 return True
             except Exception as e:
