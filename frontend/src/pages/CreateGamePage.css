@@ -99,6 +99,96 @@
   letter-spacing: 0.1em;
 }
 
+.create-timeline-box {
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.create-timeline-box__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.create-timeline-box__icon {
+  font-size: 1.1rem;
+}
+
+.create-timeline-box__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+}
+
+.create-timeline-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.create-timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  min-width: 80px;
+  flex: 1;
+}
+
+.create-timeline-step .step-time {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  background: rgba(251, 191, 36, 0.12);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.create-timeline-step .step-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+.create-timeline-step .step-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.create-timeline-arrow {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  user-select: none;
+}
+
 @media (max-width: 600px) {
   .create-settings-grid { grid-template-columns: 1fr; }
+  .create-timeline-steps {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .create-timeline-arrow {
+    text-align: center;
+    transform: rotate(90deg);
+    margin: 0.1rem 0;
+  }
 }
+

@@ -277,10 +277,14 @@ export default function QuestionSubmitPage() {
 
                     {/* Clues */}
                     <div className="submit-col-clues">
-                      <p className="submit-clues__title">Clues (Timed Reveals)</p>
-                      {[1, 2, 3].map(n => (
+                      <p className="submit-clues__title">Clues (Fixed Reveal Timeline)</p>
+                      {[
+                        { n: 1, time: '30s' },
+                        { n: 2, time: '60s' },
+                        { n: 3, time: '90s' },
+                      ].map(({ n, time }) => (
                         <div key={n} className="form-group">
-                          <label className="form-label" htmlFor={`q-clue-${n}`}>💡 Clue {n}</label>
+                          <label className="form-label" htmlFor={`q-clue-${n}`}>💡 Clue {n} (Revealed at {time})</label>
                           <input
                             id={`q-clue-${n}`}
                             className="form-input"
@@ -291,7 +295,7 @@ export default function QuestionSubmitPage() {
                         </div>
                       ))}
                       <div className="submit-clue-note">
-                        Clues are revealed one by one during the game to help players guess the movie.
+                        Clues are revealed automatically: Clue 1 at 30s, Clue 2 at 60s, and Clue 3 at 90s.
                       </div>
                     </div>
                   </div>

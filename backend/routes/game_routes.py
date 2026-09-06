@@ -32,7 +32,7 @@ def create_game():
     max_players = int(data.get('max_players', 30))
     points_per_question = int(data.get('points_per_question', 100))
     question_time = int(data.get('question_time', 120))
-    clue_interval = int(data.get('clue_interval', 30))
+    clue_interval = 30  # Fixed 30s clue timeline (0s: no clues, 30s: clue 1, 60s: clue 2, 90s: clue 3)
     question_gap = int(data.get('question_gap', 10))
 
     if not name or not avatar_id:

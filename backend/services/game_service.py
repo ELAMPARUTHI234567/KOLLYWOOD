@@ -71,7 +71,7 @@ def get_player_info(game_id: int, user_id: int):
 
 
 def start_question_timer(app, game_id: int):
-    """Launch server-side question timer thread."""
+    """Launch server-side question timer thread with fixed 0s -> 30s -> 60s -> 90s clue timeline."""
     _cancel_timer(game_id)
     _clue_states[game_id] = 0
     _question_start_times[game_id] = datetime.utcnow()
@@ -80,29 +80,32 @@ def start_question_timer(app, game_id: int):
         game = Game.query.get(game_id)
         if not game:
             return
-        clue_interval = game.clue_interval
+        question_order = game.current_question
         question_time = game.question_time
 
-    def run_question(app, game_id, clue_interval, question_time):
-        # Schedule clue 1
-        _schedule_clue(app, game_id, 1, clue_interval)
-        # Schedule clue 2
-        _schedule_clue(app, game_id, 2, clue_interval * 2)
-        # Schedule clue 3
-        _schedule_clue(app, game_id, 3, clue_interval * 3)
-        # Schedule answer reveal
-        _schedule_answer_reveal(app, game_id, question_time)
+    def run_question(app, game_id, question_order, question_time):
+        # 0s: question active, no clues
+        # 30s: reveal Clue 1
+        _schedule_clue(app, game_id, 1, 30, question_order)
+        # 60s: reveal Clue 2
+        _schedule_clue(app, game_id, 2, 60, question_order)
+        # 90s: reveal Clue 3
+        _schedule_clue(app, game_id, 3, 90, question_order)
+        # Question ends: answer reveal
+        _schedule_answer_reveal(app, game_id, question_time, question_order)
 
-    t = threading.Thread(target=run_question, args=(app, game_id, clue_interval, question_time), daemon=True)
+    t = threading.Thread(target=run_question, args=(app, game_id, question_order, question_time), daemon=True)
     t.start()
 
 
-def _schedule_clue(app, game_id: int, clue_num: int, delay: float):
+def _schedule_clue(app, game_id: int, clue_num: int, delay: float, question_order: int):
     def reveal():
         time.sleep(delay)
         with app.app_context():
             game = Game.query.get(game_id)
-            if not game or game.status not in ('QUESTION_ACTIVE', 'CLUE_1', 'CLUE_2', 'CLUE_3'):
+            if not game or game.current_question != question_order:
+                return
+            if game.status not in ('QUESTION_ACTIVE', 'CLUE_1', 'CLUE_2', 'CLUE_3'):
                 return
             status_map = {1: 'CLUE_1', 2: 'CLUE_2', 3: 'CLUE_3'}
             game.status = status_map[clue_num]
@@ -112,7 +115,7 @@ def _schedule_clue(app, game_id: int, clue_num: int, delay: float):
             # Get the current question
             q = Question.query.filter_by(
                 game_id=game_id,
-                question_order=game.current_question
+                question_order=question_order
             ).first()
             clue_text = None
             if q:
@@ -132,12 +135,12 @@ def _schedule_clue(app, game_id: int, clue_num: int, delay: float):
     t.start()
 
 
-def _schedule_answer_reveal(app, game_id: int, delay: float):
+def _schedule_answer_reveal(app, game_id: int, delay: float, question_order: int):
     def reveal():
         time.sleep(delay)
         with app.app_context():
             game = Game.query.get(game_id)
-            if not game or game.status == 'ANSWER_REVEAL':
+            if not game or game.current_question != question_order or game.status == 'ANSWER_REVEAL':
                 return
             # Only reveal if question is still active
             if game.status not in ('QUESTION_ACTIVE', 'CLUE_1', 'CLUE_2', 'CLUE_3'):

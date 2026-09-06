@@ -114,8 +114,8 @@ export default function WaitingRoomPage() {
                 <span className="waiting-stat__value">{players.length} (Auto)</span>
               </div>
               <div className="waiting-stat">
-                <span className="waiting-stat__label">Clue Interval</span>
-                <span className="waiting-stat__value">{game.clue_interval}s</span>
+                <span className="waiting-stat__label">Clue Timeline</span>
+                <span className="waiting-stat__value">30s / 60s / 90s</span>
               </div>
               <div className="waiting-stat">
                 <span className="waiting-stat__label">Question Time</span>

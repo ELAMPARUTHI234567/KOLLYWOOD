@@ -5,8 +5,7 @@ import { createGame } from '../services/api';
 import './CreateGamePage.css';
 
 const POINTS_OPTIONS = [50, 100, 200, 500, 1000];
-const TIME_OPTIONS = [60, 90, 120, 150, 180];
-const CLUE_OPTIONS = [15, 20, 30, 45, 60];
+const TIME_OPTIONS = [90, 120, 150, 180];
 const GAP_OPTIONS = [5, 10, 15, 20, 30];
 
 export default function CreateGamePage() {
@@ -17,7 +16,6 @@ export default function CreateGamePage() {
   const [pointsPerQ, setPointsPerQ] = useState(100);
   const [customPoints, setCustomPoints] = useState('');
   const [questionTime, setQuestionTime] = useState(120);
-  const [clueInterval, setClueInterval] = useState(30);
   const [questionGap, setQuestionGap] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +35,7 @@ export default function CreateGamePage() {
         max_players: maxPlayers,
         points_per_question: effectivePoints,
         question_time: questionTime,
-        clue_interval: clueInterval,
+        clue_interval: 30, // Fixed 30s clue timeline (0s -> none, 30s -> clue 1, 60s -> clue 2, 90s -> clue 3)
         question_gap: questionGap,
       });
       const { game_code, user_id, user, game } = res.data;
@@ -155,21 +153,6 @@ export default function CreateGamePage() {
                   </select>
                 </div>
 
-                {/* Clue Interval */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="clue-interval">Clue Interval</label>
-                  <select
-                    id="clue-interval"
-                    className="form-select"
-                    value={clueInterval}
-                    onChange={e => setClueInterval(Number(e.target.value))}
-                  >
-                    {CLUE_OPTIONS.map(t => (
-                      <option key={t} value={t}>{t} seconds</option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Question Gap */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="question-gap">Gap Between Questions</label>
@@ -183,6 +166,45 @@ export default function CreateGamePage() {
                       <option key={t} value={t}>{t} seconds</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Clue Timeline (Fixed Schedule) */}
+              <div className="create-timeline-box">
+                <div className="create-timeline-box__header">
+                  <span className="create-timeline-box__icon">⏱️</span>
+                  <span className="create-timeline-box__title">Clue Release Timeline (Fixed)</span>
+                </div>
+                <div className="create-timeline-steps">
+                  <div className="create-timeline-step">
+                    <span className="step-time">0s</span>
+                    <span className="step-label">Start</span>
+                    <span className="step-desc">No clues</span>
+                  </div>
+                  <span className="create-timeline-arrow">→</span>
+                  <div className="create-timeline-step">
+                    <span className="step-time">30s</span>
+                    <span className="step-label">💡 Clue 1</span>
+                    <span className="step-desc">Revealed</span>
+                  </div>
+                  <span className="create-timeline-arrow">→</span>
+                  <div className="create-timeline-step">
+                    <span className="step-time">60s</span>
+                    <span className="step-label">💡 Clue 2</span>
+                    <span className="step-desc">Revealed</span>
+                  </div>
+                  <span className="create-timeline-arrow">→</span>
+                  <div className="create-timeline-step">
+                    <span className="step-time">90s</span>
+                    <span className="step-label">💡 Clue 3</span>
+                    <span className="step-desc">Revealed</span>
+                  </div>
+                  <span className="create-timeline-arrow">→</span>
+                  <div className="create-timeline-step">
+                    <span className="step-time">{questionTime}s</span>
+                    <span className="step-label">🛑 End</span>
+                    <span className="step-desc">Answer</span>
+                  </div>
                 </div>
               </div>
 

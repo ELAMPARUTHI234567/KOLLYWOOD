@@ -121,7 +121,7 @@ Frontend runs at: `http://localhost:5173`
 1. Go to `http://localhost:5173`
 2. Click **CREATE GAME**
 3. Enter your name, choose an avatar
-4. Configure game settings (players, points, time, clue interval, gap)
+4. Configure game settings (players, points, question time, gap)
 5. Share the **Game ID** with friends
 
 ### Join Game (Players)
@@ -139,12 +139,17 @@ Frontend runs at: `http://localhost:5173`
   - Hero Name
   - Heroine Name
   - Song Name
-  - 3 Clues (revealed one at a time)
+  - 3 Clues (revealed at 30s, 60s, 90s)
 
 ### Game Starts
 - Questions are played in player order
 - Everyone sees 4 first-letter hints: Movie, Hero, Heroine, Song
-- Clues reveal at configured intervals
+- Fixed Clue Reveal Timeline:
+  - **0s**: Question starts (no clues revealed)
+  - **30s**: Clue 1 revealed
+  - **60s**: Clue 2 revealed
+  - **90s**: Clue 3 revealed
+  - **End** (e.g. 120s): Question ends, answer revealed
 - Players type the movie name to guess
 - **The question creator cannot guess their own question**
 - Faster correct answers earn more points
