@@ -1,0 +1,14 @@
+Running inspect_schema.py with public proxy settings...
+[INFO] Using discrete MySQL connection: user=root host=trolley.proxy.rlwy.net:25136 db=railway
+============================================================
+KOLLYWOOD — Database Schema Inspector (READ-ONLY)
+============================================================
+Database type : MySQL
+Host          : trolley.proxy.rlwy.net:25136
+Database      : railway
+User          : root
+
+MySQL connection error [2003]: Can't connect to MySQL server on 'trolley.proxy.rlwy.net' (timed out)
+
+If connecting to Railway MySQL, this script must be run
+with Railway env vars available (e.g. via Railway CLI or shell).

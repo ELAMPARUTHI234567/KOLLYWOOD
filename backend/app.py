@@ -24,9 +24,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from config import Config
 from extensions import db, socketio
-from routes import game_bp
+from routes import game_bp, auth_bp
+from routes.movie_routes import movie_bp
+from routes.sound_routes import sound_bp
+from routes.leaderboard_routes import leaderboard_bp
 from sockets import register_socket_events
 
 
@@ -46,11 +50,18 @@ def create_app():
     def root_health():
         return jsonify({'status': 'ok', 'message': 'KOLLOYWOOD backend is running!'}), 200
 
+    # ── JWT ───────────────────────────────────────────────────────────────────
+    JWTManager(app)
+
     # ── Database ─────────────────────────────────────────────────────────────
     db.init_app(app)
 
     # ── Register REST blueprints first ───────────────────────────────────────
     app.register_blueprint(game_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(movie_bp)
+    app.register_blueprint(sound_bp)
+    app.register_blueprint(leaderboard_bp)
 
     # ── Socket.IO ─────────────────────────────────────────────────────────────
     async_mode = app.config.get('SOCKETIO_ASYNC_MODE', 'threading' if sys.platform == 'win32' else 'eventlet')

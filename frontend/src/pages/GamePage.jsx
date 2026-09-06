@@ -7,6 +7,7 @@ import LiveChat from '../components/LiveChat';
 import Leaderboard from '../components/Leaderboard';
 import CountdownTimer from '../components/CountdownTimer';
 import { getAvatarEmoji } from '../components/avatars';
+import audioManager from '../socket/AudioManager';
 import './GamePage.css';
 
 export default function GamePage() {
@@ -87,6 +88,7 @@ export default function GamePage() {
       setIsCreator(data.creator?.id === userId);
       setServerTime(data.server_time);
       setTransitioning(false);
+      audioManager.playEffect('New Question');
       setTimeout(() => guessInputRef.current?.focus(), 300);
     });
 
@@ -103,6 +105,7 @@ export default function GamePage() {
       setCluesRevealed(data.clue_num);
       setClueTexts(prev => ({ ...prev, [data.clue_num]: data.clue_text }));
       setGameState(data.game_status);
+      audioManager.playEffect('Clue Released');
     });
 
     socket.on('guess_incorrect', (data) => {
@@ -113,6 +116,7 @@ export default function GamePage() {
         avatar_id: data.player.avatar_id,
         guess: data.guess,
       }]);
+      audioManager.playEffect('Wrong Answer');
     });
 
     socket.on('guess_correct', (data) => {
@@ -126,6 +130,7 @@ export default function GamePage() {
       if (data.player.user_id === userId) {
         setHasGuessedCorrectly(true);
       }
+      audioManager.playEffect('Correct Answer');
     });
 
     socket.on('leaderboard_update', (data) => {
@@ -137,6 +142,7 @@ export default function GamePage() {
       if (data.question) {
         setQuestion(data.question);
       }
+      audioManager.playEffect('Time Expired');
     });
 
     socket.on('round_result', (data) => {
@@ -149,6 +155,7 @@ export default function GamePage() {
 
     socket.on('game_finished', (data) => {
       sessionStorage.setItem('kw_final_result', JSON.stringify(data));
+      audioManager.playEffect('Game Complete');
       navigate(`/final/${gameCode}`);
     });
 

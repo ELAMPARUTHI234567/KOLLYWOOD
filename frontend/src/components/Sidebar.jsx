@@ -12,6 +12,7 @@ import {
   ClipboardList,
   History,
   Settings,
+  Music,
   Menu,
   X,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ const SECONDARY_NAV = [
   { id: 'questions', label: 'Questions', path: '/questions', icon: CircleHelp, desc: 'Submitted Questions' },
   { id: 'chat', label: 'Chat', path: '/chat', icon: MessageCircle, desc: 'Live Game Chat' },
   { id: 'movies', label: 'Movies', path: '/movies', icon: Clapperboard, desc: 'Kollywood Movie Hub' },
+  { id: 'sounds', label: 'Sounds', path: '/sounds', icon: Music, desc: 'Audio Management' },
   { id: 'my-games', label: 'My Games', path: '/my-games', icon: ClipboardList, desc: 'Your Game Sessions' },
   { id: 'history', label: 'Game History', path: '/history', icon: History, desc: 'Match History & Results' },
   { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, desc: 'Game & Audio Settings' },

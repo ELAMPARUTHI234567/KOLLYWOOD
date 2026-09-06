@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import socket from '../socket/socket';
 import { submitQuestion } from '../services/api';
 import { getAvatarEmoji } from '../components/avatars';
+import audioManager from '../socket/AudioManager';
 import './QuestionSubmitPage.css';
 
 const SAMPLE_QUESTIONS = [
@@ -107,6 +108,7 @@ export default function QuestionSubmitPage() {
     });
 
     socket.on('game_started', () => {
+      audioManager.playEffect('Game Start');
       navigate(`/game/${gameCode}`);
     });
 

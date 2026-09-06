@@ -1,0 +1,10 @@
+DATABASE_URL = 
+MYSQLDATABASE = railway
+MYSQLHOST = mysql.railway.internal
+MYSQLPASSWORD = EHDLmRqXaISGuiXQmXWdlRkYgWmuEZjO
+MYSQLPORT = 3306
+MYSQLUSER = root
+MYSQL_URL = 
+RAILWAY_SERVICE_KOLLYWOOD_URL = kollywood-production.up.railway.app
+RAILWAY_SERVICE_MYSQL_URL = mysql-production-93dca.up.railway.app
+RAILWAY_STATIC_URL = kollywood-production.up.railway.app

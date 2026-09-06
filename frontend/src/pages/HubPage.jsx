@@ -15,16 +15,11 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { getAvatarEmoji } from '../components/avatars';
+import MoviesView from '../components/MoviesView';
+import SoundsView from '../components/SoundsView';
+import LeaderboardView from '../components/LeaderboardView';
+import audioManager from '../socket/AudioManager';
 import './HubPage.css';
-
-const FEATURED_MOVIES = [
-  { title: 'Vikram', year: '2022', director: 'Lokesh Kanagaraj', hero: 'Kamal Haasan', tag: 'Action Thriller' },
-  { title: 'Mankatha', year: '2011', director: 'Venkat Prabhu', hero: 'Ajith Kumar', tag: 'Heist Action' },
-  { title: 'Jailer', year: '2023', director: 'Nelson Dilipkumar', hero: 'Rajinikanth', tag: 'Action Comedy' },
-  { title: 'Ghilli', year: '2004', director: 'Dharani', hero: 'Thalapathy Vijay', tag: 'Sports Action' },
-  { title: 'Baashha', year: '1995', director: 'Suresh Krissna', hero: 'Superstar Rajinikanth', tag: 'Gangster Cult' },
-  { title: 'Leo', year: '2023', director: 'Lokesh Kanagaraj', hero: 'Thalapathy Vijay', tag: 'Action Drama' },
-];
 
 export default function HubPage({ view }) {
   const navigate = useNavigate();
@@ -34,9 +29,13 @@ export default function HubPage({ view }) {
   const activeUser = JSON.parse(sessionStorage.getItem('kw_user') || 'null');
 
   // Settings state
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [haptics, setHaptics] = useState(true);
-  const [themeMode, setThemeMode] = useState('dark');
+  const [prefs, setPrefs] = useState(audioManager.prefs);
+
+  React.useEffect(() => {
+    const handleUpdate = (newPrefs) => setPrefs({ ...newPrefs });
+    audioManager.on('prefs_updated', handleUpdate);
+    return () => audioManager.off('prefs_updated', handleUpdate);
+  }, []);
 
   const renderContent = () => {
     switch (view) {
@@ -80,39 +79,7 @@ export default function HubPage({ view }) {
         );
 
       case 'leaderboard':
-        return (
-          <div className="hub-card animate-fadeIn">
-            <div className="hub-card__header">
-              <Trophy className="hub-card__icon text-gold" size={28} />
-              <div>
-                <h2 className="hub-card__title">Leaderboard & Rankings</h2>
-                <p className="hub-card__subtitle">Top scores and fastest movie guessers</p>
-              </div>
-            </div>
-
-            <div className="hub-podium">
-              <div className="hub-podium-slot rank-2">
-                <span className="podium-emoji">🥈</span>
-                <span className="podium-name">Mankatha Heist</span>
-                <span className="podium-pts">280 Pts</span>
-              </div>
-              <div className="hub-podium-slot rank-1">
-                <span className="podium-emoji">👑</span>
-                <span className="podium-name">Vikram Agent</span>
-                <span className="podium-pts">360 Pts</span>
-              </div>
-              <div className="hub-podium-slot rank-3">
-                <span className="podium-emoji">🥉</span>
-                <span className="podium-name">Muthuvel Jailer</span>
-                <span className="podium-pts">220 Pts</span>
-              </div>
-            </div>
-
-            <div className="hub-rules-tip">
-              <span>💡 Faster guesses earn higher points: 0–30s (100pts) • 30–60s (80pts) • 60–90s (60pts) • 90–120s (40pts).</span>
-            </div>
-          </div>
-        );
+        return <LeaderboardView />;
 
       case 'questions':
         return (
@@ -199,28 +166,10 @@ export default function HubPage({ view }) {
         );
 
       case 'movies':
-        return (
-          <div className="hub-card animate-fadeIn">
-            <div className="hub-card__header">
-              <Clapperboard className="hub-card__icon text-gold" size={28} />
-              <div>
-                <h2 className="hub-card__title">Kollywood Cinema Spotlight</h2>
-                <p className="hub-card__subtitle">Popular Tamil cinema references and question inspiration</p>
-              </div>
-            </div>
+        return <MoviesView />;
 
-            <div className="hub-movies-grid">
-              {FEATURED_MOVIES.map((m, idx) => (
-                <div key={idx} className="hub-movie-card">
-                  <div className="hub-movie-badge">{m.tag}</div>
-                  <h4 className="hub-movie-title">{m.title} ({m.year})</h4>
-                  <p className="hub-movie-detail">🎬 Directed by {m.director}</p>
-                  <p className="hub-movie-detail">⭐ Starring {m.hero}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+      case 'sounds':
+        return <SoundsView />;
 
       case 'my-games':
         return (
@@ -295,16 +244,44 @@ export default function HubPage({ view }) {
             <div className="hub-settings-list">
               <div className="hub-setting-row">
                 <div className="hub-setting-info">
+                  <span className="hub-setting-label">Mute All Sounds</span>
+                  <span className="hub-setting-desc">Mute both background music and sound effects globally</span>
+                </div>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${!prefs.muted ? 'btn-gold' : 'btn-outline'}`}
+                  onClick={() => audioManager.setPref('muted', !prefs.muted)}
+                >
+                  {!prefs.muted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                  {!prefs.muted ? 'Unmuted' : 'Muted'}
+                </button>
+              </div>
+
+              <div className="hub-setting-row">
+                <div className="hub-setting-info">
+                  <span className="hub-setting-label">Background Music</span>
+                  <span className="hub-setting-desc">Play persistent cinematic music</span>
+                </div>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${prefs.bgmEnabled ? 'btn-gold' : 'btn-outline'}`}
+                  onClick={() => audioManager.setPref('bgmEnabled', !prefs.bgmEnabled)}
+                >
+                  {prefs.bgmEnabled ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              <div className="hub-setting-row">
+                <div className="hub-setting-info">
                   <span className="hub-setting-label">Sound Effects & Timers</span>
                   <span className="hub-setting-desc">Play audio cue when clues reveal and countdown reaches 10s</span>
                 </div>
                 <button
                   type="button"
-                  className={`btn btn-sm ${soundEnabled ? 'btn-gold' : 'btn-outline'}`}
-                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`btn btn-sm ${prefs.sfxEnabled ? 'btn-gold' : 'btn-outline'}`}
+                  onClick={() => audioManager.setPref('sfxEnabled', !prefs.sfxEnabled)}
                 >
-                  {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                  {soundEnabled ? 'Enabled' : 'Muted'}
+                  {prefs.sfxEnabled ? 'Enabled' : 'Disabled'}
                 </button>
               </div>
 

@@ -12,24 +12,46 @@ const api = axios.create({
   timeout: 12000,
 });
 
-// Intercept HTML responses (e.g. from static host rewrites or unhandled server crash pages)
+// ── Request interceptor — attach JWT if present ───────────────────────────────
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('kw_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ── Response interceptor — normalise errors, handle 401 ──────────────────────
 api.interceptors.response.use(
   (response) => {
-    // If the server responded with an HTML document instead of JSON (e.g. Vercel SPA rewrite fallback)
+    // If the server responded with an HTML document instead of JSON
+    // (e.g. Vercel SPA rewrite fallback or unhandled server crash page)
     if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
       return Promise.reject(new Error('Backend returned HTML instead of JSON. Ensure VITE_BACKEND_URL is set to your Railway backend URL.'));
     }
     return response;
   },
   (error) => {
-    // If response body is an HTML error page or undefined, create a readable error message
     if (error.response) {
+      const status = error.response.status;
+
+      // 401 Unauthorised — token expired or invalid → force logout
+      if (status === 401) {
+        const isAuthEndpoint = error.config?.url?.includes('/auth/');
+        if (!isAuthEndpoint) {
+          // Only auto-logout for non-auth endpoints (game requests, /me, etc.)
+          localStorage.removeItem('kw_token');
+          localStorage.removeItem('kw_user');
+          window.location.href = '/login';
+        }
+      }
+
       if (typeof error.response.data === 'string' && error.response.data.trim().startsWith('<')) {
-        error.friendlyMessage = `Server error (${error.response.status}). The backend service may be starting up or encountered an unhandled error.`;
+        error.friendlyMessage = `Server error (${status}). The backend service may be starting up or encountered an unhandled error.`;
       } else if (error.response.data?.error) {
         error.friendlyMessage = error.response.data.error;
       } else {
-        error.friendlyMessage = `Server error (${error.response.status}). Please try again.`;
+        error.friendlyMessage = `Server error (${status}). Please try again.`;
       }
     } else if (error.request) {
       error.friendlyMessage = 'Unable to connect to backend server. Please check your internet connection or backend deployment.';
@@ -40,11 +62,18 @@ api.interceptors.response.use(
   }
 );
 
-export const createGame  = (data)           => api.post('/create-game', data);
-export const joinGame    = (data)           => api.post('/join-game', data);
-export const getGame     = (gameCode)       => api.get(`/game/${gameCode}`);
+// ── Game API ──────────────────────────────────────────────────────────────────
+export const createGame     = (data)           => api.post('/create-game', data);
+export const joinGame       = (data)           => api.post('/join-game', data);
+export const getGame        = (gameCode)       => api.get(`/game/${gameCode}`);
 export const submitQuestion = (gameCode, data) => api.post(`/game/${gameCode}/submit-question`, data);
-export const getLeaderboard = (gameCode)   => api.get(`/game/${gameCode}/leaderboard`);
-export const healthCheck = ()              => api.get('/health');
+export const getLeaderboard = (gameCode)       => api.get(`/game/${gameCode}/leaderboard`);
+export const healthCheck    = ()               => api.get('/health');
+
+// ── Auth API ──────────────────────────────────────────────────────────────────
+export const authLogin    = (data) => api.post('/auth/login', data);
+export const authRegister = (data) => api.post('/auth/register', data);
+export const authMe       = ()     => api.get('/auth/me');
+export const authLogout   = ()     => api.post('/auth/logout');
 
 export default api;

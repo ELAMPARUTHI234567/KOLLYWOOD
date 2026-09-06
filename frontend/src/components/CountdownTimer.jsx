@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import audioManager from '../socket/AudioManager';
 import './CountdownTimer.css';
 
 export default function CountdownTimer({ totalSeconds, elapsedSeconds = 0, onExpire }) {
   const [remaining, setRemaining] = useState(totalSeconds - elapsedSeconds);
   const intervalRef = useRef(null);
   const startedRef = useRef(Date.now() - elapsedSeconds * 1000);
+  const warnedRef = useRef(false);
 
   useEffect(() => {
     // Sync with server-provided elapsed
@@ -17,6 +19,13 @@ export default function CountdownTimer({ totalSeconds, elapsedSeconds = 0, onExp
       const elapsed = (Date.now() - startedRef.current) / 1000;
       const rem = Math.max(0, totalSeconds - elapsed);
       setRemaining(rem);
+      
+      // Timer warning at exactly 10s or close to it
+      if (Math.floor(rem) === 10 && !warnedRef.current) {
+        audioManager.playEffect('Timer Warning');
+        warnedRef.current = true;
+      }
+      
       if (rem <= 0) {
         clearInterval(intervalRef.current);
         onExpire && onExpire();

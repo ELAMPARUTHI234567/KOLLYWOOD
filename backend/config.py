@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -106,6 +107,13 @@ def _build_db_uri():
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'kolloywood-super-secret-key-2024')
+
+    # ── JWT ───────────────────────────────────────────────────────────────────
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'kolloywood-jwt-secret-CHANGE-IN-PROD')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
+    JWT_TOKEN_LOCATION = ['headers']
+    JWT_HEADER_NAME = 'Authorization'
+    JWT_HEADER_TYPE = 'Bearer'
 
     # Database — MySQL by default; SQLite if USE_SQLITE=true in .env
     _db_uri = _build_db_uri()
