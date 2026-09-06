@@ -38,6 +38,9 @@ export default function CreateGamePage() {
         clue_interval: 30, // Fixed 30s clue timeline (0s -> none, 30s -> clue 1, 60s -> clue 2, 90s -> clue 3)
         question_gap: questionGap,
       });
+      if (!res.data || !res.data.game_code) {
+        throw new Error('Invalid response from server. Game code not received.');
+      }
       const { game_code, user_id, user, game } = res.data;
       // Store session
       sessionStorage.setItem('kw_user_id', user_id);
@@ -46,7 +49,7 @@ export default function CreateGamePage() {
       sessionStorage.setItem('kw_is_host', 'true');
       navigate(`/room/${game_code}`);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create game. Please try again.');
+      setError(err.friendlyMessage || err.response?.data?.error || err.message || 'Failed to create game. Please try again.');
     } finally {
       setLoading(false);
     }

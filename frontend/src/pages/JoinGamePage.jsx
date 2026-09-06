@@ -25,6 +25,9 @@ export default function JoinGamePage() {
         name: name.trim(),
         avatar_id: avatarId,
       });
+      if (!res.data || !res.data.game_code) {
+        throw new Error('Invalid response from server. Game code not received.');
+      }
       const { game_code, user_id, user, game } = res.data;
       sessionStorage.setItem('kw_user_id', user_id);
       sessionStorage.setItem('kw_user', JSON.stringify(user));
@@ -32,7 +35,7 @@ export default function JoinGamePage() {
       sessionStorage.setItem('kw_is_host', 'false');
       navigate(`/room/${game_code}`);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to join game. Check the Game ID and try again.');
+      setError(err.friendlyMessage || err.response?.data?.error || err.message || 'Failed to join game. Check the Game ID and try again.');
     } finally {
       setLoading(false);
     }

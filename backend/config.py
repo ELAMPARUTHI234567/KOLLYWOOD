@@ -13,12 +13,21 @@ def _build_db_uri():
         return f"sqlite:///{db_path}"
 
     # Check for direct connection URL from cloud providers (Railway, Render, Aiven, etc.)
-    db_url = os.getenv('DATABASE_URL') or os.getenv('MYSQL_URL') or os.getenv('MYSQLURL')
+    db_url = (
+        os.getenv('DATABASE_URL') or
+        os.getenv('MYSQL_URL') or
+        os.getenv('MYSQLURL') or
+        os.getenv('MYSQL_PRIVATE_URL') or
+        os.getenv('MYSQLPRIVATEURL')
+    )
     if db_url:
         if db_url.startswith('mysql://'):
             db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
         elif db_url.startswith('mysql2://'):
             db_url = db_url.replace('mysql2://', 'mysql+pymysql://', 1)
+        if 'charset=' not in db_url:
+            separator = '&' if '?' in db_url else '?'
+            db_url = f"{db_url}{separator}charset=utf8mb4"
         return db_url
 
     host     = os.getenv('MYSQLHOST', os.getenv('DB_HOST', 'localhost'))
