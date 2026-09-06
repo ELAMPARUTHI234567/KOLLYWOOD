@@ -17,13 +17,15 @@ def _build_db_uri():
     if db_url:
         if db_url.startswith('mysql://'):
             db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
+        elif db_url.startswith('mysql2://'):
+            db_url = db_url.replace('mysql2://', 'mysql+pymysql://', 1)
         return db_url
 
     host     = os.getenv('MYSQLHOST', os.getenv('DB_HOST', 'localhost'))
     port     = os.getenv('MYSQLPORT', os.getenv('DB_PORT', '3306'))
     user     = os.getenv('MYSQLUSER', os.getenv('DB_USER', 'root'))
     password = os.getenv('MYSQLPASSWORD', os.getenv('DB_PASSWORD', ''))
-    name     = os.getenv('MYSQLDATABASE', os.getenv('DB_NAME', 'kolloywood'))
+    name     = os.getenv('MYSQLDATABASE', os.getenv('MYSQL_DATABASE', os.getenv('DB_NAME', 'kolloywood')))
     return f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
 
@@ -40,6 +42,9 @@ class Config:
         SQLALCHEMY_ENGINE_OPTIONS = {
             'pool_recycle': 300,
             'pool_pre_ping': True,
+            'connect_args': {
+                'connect_timeout': 10,
+            },
         }
 
     # CORS
