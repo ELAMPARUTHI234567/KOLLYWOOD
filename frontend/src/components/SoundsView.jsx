@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Music, Plus, X, Search, Edit2, Trash2, Play, Square, Pause } from 'lucide-react';
+import api from '../services/api';
 
 export default function SoundsView() {
   const [sounds, setSounds] = useState([]);
@@ -16,15 +17,10 @@ export default function SoundsView() {
   const [playingId, setPlayingId] = useState(null);
   const audioRef = useRef(new Audio());
 
-  const token = sessionStorage.getItem('kw_token');
-  const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
   const fetchSounds = async () => {
     try {
-      const res = await fetch(`${VITE_BACKEND_URL}/api/sounds`);
-      if (res.ok) {
-        setSounds(await res.json());
-      }
+      const res = await api.get('/sounds');
+      setSounds(res.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -59,11 +55,8 @@ export default function SoundsView() {
 
   const handleQuickAdd = async () => {
     try {
-      const res = await fetch(`${VITE_BACKEND_URL}/api/sounds/quick-sample`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) fetchSounds();
+      await api.post('/sounds/quick-sample');
+      fetchSounds();
     } catch (err) {
       console.error(err);
     }
@@ -114,26 +107,17 @@ export default function SoundsView() {
     data.append('description', formData.description);
 
     try {
-      const res = await fetch(`${VITE_BACKEND_URL}/api/sounds/upload`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`
-        },
-        body: data
+      await api.post('/sounds/upload', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      if (res.ok) {
-        setShowAddForm(false);
-        setFormData({ name: '', category: 'Background Music', description: '' });
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        fetchSounds();
-      } else {
-        const err = await res.json();
-        setUploadError(err.error || 'Failed to add sound');
-      }
+      setShowAddForm(false);
+      setFormData({ name: '', category: 'Background Music', description: '' });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      fetchSounds();
     } catch (err) {
       console.error(err);
-      setUploadError('Network error during upload');
+      setUploadError(err.friendlyMessage || 'Network error during upload');
     } finally {
       setUploading(false);
     }
@@ -143,11 +127,8 @@ export default function SoundsView() {
     if (!confirm('Are you sure you want to delete this sound?')) return;
     if (playingId === id) handleStop();
     try {
-      const res = await fetch(`${VITE_BACKEND_URL}/api/sounds/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) fetchSounds();
+      await api.delete(`/sounds/${id}`);
+      fetchSounds();
     } catch (err) {
       console.error(err);
     }
