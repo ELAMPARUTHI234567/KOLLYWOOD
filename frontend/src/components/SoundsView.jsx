@@ -11,6 +11,7 @@ export default function SoundsView() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
   
   const [playingId, setPlayingId] = useState(null);
   const audioRef = useRef(new Audio());
