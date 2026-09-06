@@ -14,6 +14,34 @@ def health():
     return jsonify({'status': 'ok', 'message': 'KOLLOYWOOD backend is running!'})
 
 
+@game_bp.route('/db-status', methods=['GET'])
+def db_status():
+    import os
+    import re
+    from flask import current_app
+
+    connected = False
+    error_msg = None
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("SELECT 1"))
+        connected = True
+    except Exception as e:
+        error_msg = str(e)
+
+    db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    masked_target = re.sub(r':([^@/?#]+)@', ':****@', db_uri) if db_uri else 'None'
+    detected_keys = [k for k in os.environ.keys() if any(tag in k.upper() for tag in ['SQL', 'DATABASE', 'DB', 'RAILWAY', 'PORT', 'HOST', 'URL'])]
+    safe_keys = [k for k in detected_keys if not any(s in k.upper() for s in ['PASS', 'SECRET', 'KEY', 'TOKEN', 'AUTH'])]
+
+    return jsonify({
+        'connected': connected,
+        'target': masked_target,
+        'error': error_msg,
+        'detected_keys': sorted(safe_keys)
+    }), 200 if connected else 500
+
+
 
 def generate_game_code():
     """Generate unique 7-character game code like KOL1234."""
