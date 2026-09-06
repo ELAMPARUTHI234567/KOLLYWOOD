@@ -31,14 +31,26 @@ def db_status():
 
     db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
     masked_target = re.sub(r':([^@/?#]+)@', ':****@', db_uri) if db_uri else 'None'
-    detected_keys = [k for k in os.environ.keys() if any(tag in k.upper() for tag in ['SQL', 'DATABASE', 'DB', 'RAILWAY', 'PORT', 'HOST', 'URL'])]
-    safe_keys = [k for k in detected_keys if not any(s in k.upper() for s in ['PASS', 'SECRET', 'KEY', 'TOKEN', 'AUTH'])]
+    db_var_debug = {}
+    for var_name in ['MYSQL_URL', 'DATABASE_URL', 'MYSQL_PRIVATE_URL', 'MYSQLHOST', 'MYSQLUSER', 'MYSQLPORT', 'MYSQLDATABASE', 'MYSQLPASSWORD']:
+        val = os.getenv(var_name)
+        if val is not None:
+            masked = re.sub(r':([^@/?#]+)@', ':****@', val)
+            db_var_debug[var_name] = {
+                'len': len(val),
+                'preview': masked[:15] + ('...' if len(masked) > 15 else '') if 'PASSWORD' not in var_name else f'[len={len(val)}]',
+                'has_at': '@' in val,
+                'starts_with_mysql': val.startswith('mysql')
+            }
+        else:
+            db_var_debug[var_name] = None
 
     return jsonify({
         'connected': connected,
         'target': masked_target,
         'error': error_msg,
-        'detected_keys': sorted(safe_keys)
+        'detected_keys': sorted(safe_keys),
+        'db_var_debug': db_var_debug
     }), 200 if connected else 500
 
 
