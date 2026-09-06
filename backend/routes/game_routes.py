@@ -45,6 +45,9 @@ def db_status():
         else:
             db_var_debug[var_name] = None
 
+    detected_keys = [k for k in os.environ.keys() if any(tag in k.upper() for tag in ['SQL', 'DATABASE', 'DB', 'RAILWAY', 'PORT', 'HOST', 'URL'])]
+    safe_keys = [k for k in detected_keys if not any(s in k.upper() for s in ['PASS', 'SECRET', 'KEY', 'TOKEN', 'AUTH'])]
+
     return jsonify({
         'connected': connected,
         'target': masked_target,
