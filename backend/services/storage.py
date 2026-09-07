@@ -33,9 +33,13 @@ def upload_file_to_supabase(file_stream, filename, content_type):
     upload_url = f"{url}/storage/v1/object/{bucket}/{unique_name}"
     
     headers = {
-        "Authorization": f"Bearer {key}",
+        "apikey": key,
         "Content-Type": content_type
     }
+    
+    # If using a legacy JWT key, include the Bearer token as well
+    if key.startswith("eyJ"):
+        headers["Authorization"] = f"Bearer {key}"
     
     # Send the request
     response = requests.post(upload_url, headers=headers, data=file_stream)
@@ -65,8 +69,12 @@ def delete_file_from_supabase(path_or_url):
             
     delete_url = f"{url}/storage/v1/object/{bucket}/{path}"
     headers = {
-        "Authorization": f"Bearer {key}",
+        "apikey": key,
     }
+    
+    # If using a legacy JWT key, include the Bearer token as well
+    if key.startswith("eyJ"):
+        headers["Authorization"] = f"Bearer {key}"
     
     try:
         response = requests.delete(delete_url, headers=headers)
