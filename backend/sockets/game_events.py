@@ -24,6 +24,9 @@ from services.game_service import (
 # Map socket_id -> {user_id, game_code}
 _socket_sessions = {}
 
+# Map game_code -> {sound_id, action, volume, playback_position, server_time, sound_name, sound_url}
+_game_audio_state = {}
+
 
 def register_socket_events(app):
     """Register all Socket.IO event handlers."""
@@ -105,6 +108,10 @@ def register_socket_events(app):
                 payload['has_guessed_correctly'] = has_guessed
                 payload['question_number'] = game.current_question
                 payload['total_questions'] = game.total_questions
+
+            # Add current audio state for this game if any
+            if game_code in _game_audio_state and _game_audio_state[game_code]:
+                payload['audio_state'] = _game_audio_state[game_code]
 
             # Emit to the joining player their full game state
             emit('game_state', payload)
@@ -379,3 +386,83 @@ def register_socket_events(app):
                 return
             # Notify all players to return to lobby/home
             socketio.emit('redirect_to_home', {}, room=game_code)
+
+    @socketio.on('host_audio_command')
+    def on_host_audio_command(data):
+        game_id = data.get('game_id')
+        sound_id = data.get('sound_id')
+        action = data.get('action')
+        volume = data.get('volume', 1.0)
+        playback_position = data.get('playback_position', 0.0)
+        
+        sid = request.sid
+        session = _socket_sessions.get(sid)
+        if not session:
+            return
+            
+        user_id = session.get('user_id')
+        game_code = session.get('game_code')
+
+        with app.app_context():
+            game = Game.query.get(game_id)
+            if not game or game.game_code != game_code:
+                return
+                
+            # Verify sender is actual host
+            if game.host_id != user_id:
+                return
+                
+            # Verify valid action
+            if action not in ('play', 'pause', 'resume', 'stop', 'volume'):
+                return
+                
+            from models.sound import Sound
+            sound = None
+            if sound_id:
+                sound = Sound.query.get(sound_id)
+                if not sound or not sound.is_active:
+                    return
+
+            state = _game_audio_state.get(game_code, {})
+            now = datetime.utcnow().isoformat()
+            
+            if action == 'play':
+                state = {
+                    'sound_id': sound_id,
+                    'action': 'play',
+                    'volume': volume,
+                    'playback_position': 0.0,
+                    'server_time': now,
+                    'sound_name': sound.name if sound else None,
+                    'sound_url': sound.file_url if sound else None,
+                }
+            elif action == 'pause':
+                state['action'] = 'pause'
+                state['playback_position'] = playback_position
+                state['server_time'] = now
+            elif action == 'resume':
+                state['action'] = 'play'
+                state['playback_position'] = playback_position
+                state['server_time'] = now
+            elif action == 'stop':
+                state = {}
+            elif action == 'volume':
+                if state:
+                    state['volume'] = volume
+
+            if state:
+                _game_audio_state[game_code] = state
+            else:
+                _game_audio_state.pop(game_code, None)
+
+            socketio.emit('audio_command', {
+                'game_id': game_id,
+                'sound_id': state.get('sound_id', sound_id),
+                'action': action,
+                'volume': volume,
+                'server_time': now,
+                'playback_position': state.get('playback_position', playback_position),
+                'sound_name': state.get('sound_name', sound.name if sound else None),
+                'sound_url': state.get('sound_url', sound.file_url if sound else None),
+            }, room=game_code)
+

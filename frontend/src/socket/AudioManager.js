@@ -89,6 +89,103 @@ class AudioManager extends EventEmitter {
       audio.play().catch(e => console.warn('Audio auto-play blocked', e));
     }
   }
+
+  playHostAudio(url, volume, serverTime, playbackPosition = 0) {
+    if (this.lastCommandTime && serverTime) {
+       const newTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
+       if (newTime < this.lastCommandTime) return; // Prevent race conditions
+       this.lastCommandTime = newTime;
+    } else if (serverTime) {
+       this.lastCommandTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
+    }
+
+    if (this.hostAudio && this.hostAudio.src !== url) {
+      this.hostAudio.pause();
+      this.hostAudio.src = ''; 
+      this.hostAudio = null;
+    }
+    if (!this.hostAudio) {
+      this.hostAudio = new Audio(url);
+    }
+    this.hostAudio.volume = volume;
+    
+    let timeOffset = 0;
+    if (serverTime) {
+      const serverZ = serverTime.endsWith('Z') ? serverTime : serverTime + 'Z';
+      const offsetMs = Date.now() - new Date(serverZ).getTime();
+      if (offsetMs > 0 && offsetMs < 30000) {
+        timeOffset = offsetMs / 1000;
+      }
+    }
+    
+    const targetTime = playbackPosition + timeOffset;
+    if (targetTime > 0 && Number.isFinite(targetTime)) {
+       // Only set currentTime if it's safe to do so
+       if (this.hostAudio.readyState >= 1) { // HAVE_METADATA
+         this.hostAudio.currentTime = Math.min(targetTime, this.hostAudio.duration || targetTime);
+       } else {
+         this.hostAudio.addEventListener('loadedmetadata', () => {
+             this.hostAudio.currentTime = Math.min(targetTime, this.hostAudio.duration || targetTime);
+         }, { once: true });
+       }
+    }
+    
+    this.hostAudio.play().catch(e => {
+      console.warn('Host audio blocked', e);
+      this.emit('autoplay_blocked');
+    });
+  }
+  
+  pauseHostAudio(serverTime, playbackPosition = 0) {
+    if (this.lastCommandTime && serverTime) {
+       const newTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
+       if (newTime < this.lastCommandTime) return;
+       this.lastCommandTime = newTime;
+    }
+    if (this.hostAudio) {
+      this.hostAudio.pause();
+      if (playbackPosition >= 0 && Number.isFinite(playbackPosition)) {
+         if (this.hostAudio.readyState >= 1) {
+           this.hostAudio.currentTime = playbackPosition;
+         } else {
+           this.hostAudio.addEventListener('loadedmetadata', () => {
+             this.hostAudio.currentTime = playbackPosition;
+           }, { once: true });
+         }
+      }
+    }
+  }
+  
+  resumeHostAudio(serverTime, playbackPosition) {
+    if (this.hostAudio) {
+       this.playHostAudio(this.hostAudio.src, this.hostAudio.volume, serverTime, playbackPosition);
+    }
+  }
+  
+  stopHostAudio(serverTime) {
+    if (this.lastCommandTime && serverTime) {
+       const newTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
+       if (newTime < this.lastCommandTime) return;
+       this.lastCommandTime = newTime;
+    } else if (serverTime) {
+       this.lastCommandTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
+    }
+    if (this.hostAudio) {
+      this.hostAudio.pause();
+      this.hostAudio.currentTime = 0;
+      this.hostAudio = null;
+    }
+  }
+  
+  setHostAudioVolume(volume) {
+    if (this.hostAudio) {
+      this.hostAudio.volume = volume;
+    }
+  }
+
+  getHostAudioCurrentTime() {
+    return this.hostAudio ? this.hostAudio.currentTime : 0;
+  }
 }
 
 const audioManager = new AudioManager();

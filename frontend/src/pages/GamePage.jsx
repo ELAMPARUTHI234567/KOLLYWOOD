@@ -36,11 +36,95 @@ export default function GamePage() {
   const [nextQCountdown, setNextQCountdown] = useState(0);
   const guessInputRef = useRef(null);
 
+  const [soundsList, setSoundsList] = useState([]);
+  const [selectedSoundId, setSelectedSoundId] = useState('');
+  const [hostVolume, setHostVolume] = useState(1.0);
+  const [hostMuted, setHostMuted] = useState(false);
+  const [currentlyPlayingSound, setCurrentlyPlayingSound] = useState(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+
   const questionTime = game.question_time || 120;
+  const isHost = game?.host_id === userId;
 
   const elapsedFromServer = serverTime
     ? (Date.now() - new Date(serverTime + 'Z').getTime()) / 1000
     : 0;
+
+  useEffect(() => {
+    const fetchSounds = async () => {
+      try {
+        const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const res = await fetch(`${VITE_BACKEND_URL}/api/sounds`);
+        if (res.ok) {
+          const data = await res.json();
+          setSoundsList(data.filter(s => s.is_active));
+        }
+      } catch (e) {
+        console.error('Failed to load active sounds', e);
+      }
+    };
+    fetchSounds();
+  }, []);
+
+  useEffect(() => {
+    const handleAutoplayBlocked = () => setAutoplayBlocked(true);
+    audioManager.on('autoplay_blocked', handleAutoplayBlocked);
+    return () => {
+      audioManager.off('autoplay_blocked', handleAutoplayBlocked);
+    };
+  }, []);
+
+  const processAudioState = useCallback((state) => {
+    if (!state) return;
+    setCurrentlyPlayingSound(state.sound_name || null);
+    if (state.action === 'play') {
+      if (state.sound_url) {
+        audioManager.playHostAudio(state.sound_url, state.volume, state.server_time, state.playback_position);
+      }
+    } else if (state.action === 'pause') {
+      audioManager.pauseHostAudio(state.server_time, state.playback_position);
+    } else if (state.action === 'stop') {
+      audioManager.stopHostAudio(state.server_time);
+      setCurrentlyPlayingSound(null);
+    }
+  }, []);
+
+  const emitAudioCommand = (action) => {
+    if (!socket.connected) return;
+    const vol = hostMuted ? 0 : hostVolume;
+    const pos = audioManager.getHostAudioCurrentTime();
+    socket.emit('host_audio_command', {
+      game_id: game.id,
+      sound_id: selectedSoundId ? parseInt(selectedSoundId) : null,
+      action,
+      volume: vol,
+      playback_position: pos
+    });
+  };
+
+  const handleVolumeChange = (e) => {
+    const vol = parseFloat(e.target.value);
+    setHostVolume(vol);
+    if (!hostMuted) {
+      socket.emit('host_audio_command', {
+        game_id: game.id,
+        sound_id: selectedSoundId ? parseInt(selectedSoundId) : null,
+        action: 'volume',
+        volume: vol
+      });
+    }
+  };
+
+  const handleMuteToggle = () => {
+    const newMuted = !hostMuted;
+    setHostMuted(newMuted);
+    socket.emit('host_audio_command', {
+      game_id: game.id,
+      sound_id: selectedSoundId ? parseInt(selectedSoundId) : null,
+      action: 'volume',
+      volume: newMuted ? 0 : hostVolume
+    });
+  };
 
   useEffect(() => {
     if (!userId) { navigate('/'); return; }
@@ -70,6 +154,9 @@ export default function GamePage() {
           });
         }
         if (data.has_guessed_correctly) setHasGuessedCorrectly(true);
+      }
+      if (data.audio_state) {
+        processAudioState(data.audio_state);
       }
     });
 
@@ -163,6 +250,22 @@ export default function GamePage() {
 
     socket.on('error', (data) => setGuessError(data.message));
 
+    socket.on('audio_command', (data) => {
+      setCurrentlyPlayingSound(data.sound_name || null);
+      if (data.action === 'play' && data.sound_url) {
+        audioManager.playHostAudio(data.sound_url, data.volume, data.server_time, data.playback_position);
+      } else if (data.action === 'pause') {
+        audioManager.pauseHostAudio(data.server_time, data.playback_position);
+      } else if (data.action === 'resume') {
+        audioManager.resumeHostAudio(data.server_time, data.playback_position);
+      } else if (data.action === 'stop') {
+        audioManager.stopHostAudio(data.server_time);
+        setCurrentlyPlayingSound(null);
+      } else if (data.action === 'volume') {
+        audioManager.setHostAudioVolume(data.volume);
+      }
+    });
+
     return () => {
       socket.off('game_state');
       socket.off('question_active');
@@ -176,6 +279,7 @@ export default function GamePage() {
       socket.off('game_finished');
       socket.off('redirect_to_home');
       socket.off('error');
+      socket.off('audio_command');
     };
   }, [gameCode, userId, navigate]);
 
@@ -318,6 +422,49 @@ export default function GamePage() {
 
         {/* Right Sidebar */}
         <aside className="game-sidebar">
+          {autoplayBlocked && (
+            <div className="game-autoplay-notice animate-shake" style={{ background: '#dc3545', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => { setAutoplayBlocked(false); audioManager.playEffect('Clue Released'); }}>
+              🔊 Tap to enable game audio
+            </div>
+          )}
+
+          {currentlyPlayingSound && !isHost && (
+             <div className="game-playing-audio" style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', color: '#ffd700' }}>
+                🎵 Playing: {currentlyPlayingSound}
+             </div>
+          )}
+
+          {isHost && (
+            <div className="game-host-audio" style={{ background: 'rgba(0,0,0,0.5)', padding: '15px', borderRadius: '8px', marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h4 style={{ margin: 0, color: '#ffd700', textAlign: 'center' }}>🎵 GAME AUDIO</h4>
+              <select value={selectedSoundId} onChange={e => setSelectedSoundId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', background: '#333', color: 'white', border: '1px solid #555' }}>
+                <option value="">[ Select Sound ▼ ]</option>
+                {soundsList.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button onClick={() => emitAudioCommand('play')} disabled={!selectedSoundId} style={{ background: '#28a745', border: 'none', color: 'white', padding: '8px', borderRadius: '4px', cursor: selectedSoundId ? 'pointer' : 'not-allowed' }}>▶ PLAY</button>
+                <button onClick={() => emitAudioCommand('stop')} style={{ background: '#dc3545', border: 'none', color: 'white', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>⏹ STOP</button>
+                <button onClick={() => emitAudioCommand('pause')} style={{ background: '#ffc107', border: 'none', color: 'black', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>⏸ PAUSE</button>
+                <button onClick={() => emitAudioCommand('resume')} style={{ background: '#17a2b8', border: 'none', color: 'white', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>▶ RESUME</button>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                <label style={{ fontSize: '0.9em', color: '#ccc' }}>Volume:</label>
+                <input type="range" min="0" max="1" step="0.05" value={hostVolume} onChange={handleVolumeChange} disabled={hostMuted} style={{ flex: 1 }} />
+                <button onClick={handleMuteToggle} style={{ background: '#555', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.8em', cursor: 'pointer' }}>{hostMuted ? 'UNMUTE' : 'MUTE'}</button>
+              </div>
+              
+              {currentlyPlayingSound && (
+                <div style={{ marginTop: '10px', fontSize: '0.9em', textAlign: 'center', color: '#aaa' }}>
+                  Currently Playing:<br /><strong style={{ color: '#fff' }}>{currentlyPlayingSound}</strong>
+                </div>
+              )}
+            </div>
+          )}
+          
           <LiveChat messages={chatMessages} />
           <Leaderboard players={leaderboard} currentUserId={userId} />
         </aside>
