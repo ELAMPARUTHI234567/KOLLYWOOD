@@ -35,6 +35,8 @@ export default function GamePage() {
   const [game, setGame] = useState(JSON.parse(sessionStorage.getItem('kw_game') || '{}'));
   const [transitioning, setTransitioning] = useState(false);
   const [nextQCountdown, setNextQCountdown] = useState(0);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [mobileAudioUnlocked, setMobileAudioUnlocked] = useState(false);
   const guessInputRef = useRef(null);
 
   const [soundsList, setSoundsList] = useState([]);
@@ -42,8 +44,6 @@ export default function GamePage() {
   const [hostVolume, setHostVolume] = useState(1.0);
   const [hostMuted, setHostMuted] = useState(false);
   const [currentlyPlayingSound, setCurrentlyPlayingSound] = useState(null);
-  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
-
   const questionTime = game.question_time || 120;
   const isHost = game?.host_id === userId;
 
@@ -418,9 +418,41 @@ export default function GamePage() {
         </div>
 
         <aside className="game-sidebar">
-          {autoplayBlocked && (
-            <div className="game-autoplay-notice animate-shake" style={{ background: '#dc3545', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => { setAutoplayBlocked(false); audioManager.resumeBlockedAudio(); }}>
-              🔊 Tap to enable game audio
+          {!isHost && (
+            <div 
+              className="game-autoplay-notice" 
+              style={{ 
+                background: mobileAudioUnlocked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(220, 53, 69, 0.8)', 
+                color: 'white', 
+                padding: '10px', 
+                borderRadius: '8px', 
+                marginBottom: '10px', 
+                textAlign: 'center', 
+                cursor: mobileAudioUnlocked ? 'default' : 'pointer',
+                border: mobileAudioUnlocked ? '1px solid #4CAF50' : 'none'
+              }} 
+              onClick={() => { 
+                if (!mobileAudioUnlocked) {
+                  audioManager.unlockMobileAudio().then(() => {
+                    setMobileAudioUnlocked(true);
+                    setAutoplayBlocked(false);
+                  });
+                }
+              }}
+            >
+              {mobileAudioUnlocked ? '✅ Game Audio Enabled' : '🔊 Enable Game Audio'}
+            </div>
+          )}
+
+          {autoplayBlocked && !mobileAudioUnlocked && (
+            <div className="game-autoplay-notice animate-shake" style={{ background: '#dc3545', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => { 
+                audioManager.unlockMobileAudio().then(() => {
+                  setMobileAudioUnlocked(true);
+                  setAutoplayBlocked(false);
+                  audioManager.resumeBlockedAudio();
+                });
+            }}>
+              ⚠️ Audio Blocked - Tap to Fix
             </div>
           )}
 

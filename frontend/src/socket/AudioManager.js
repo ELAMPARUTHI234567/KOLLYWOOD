@@ -8,6 +8,8 @@ class AudioManager extends EventEmitter {
     this.sounds = {};
     this.bgmAudio = new Audio();
     this.bgmAudio.loop = true;
+    this.hostAudio = new Audio();
+    this.mobileAudioUnlocked = false;
     
     this.prefs = {
       masterVolume: 1.0,
@@ -94,13 +96,10 @@ class AudioManager extends EventEmitter {
        this.lastCommandTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();
     }
 
-    if (this.hostAudio && this.hostAudio.src !== url) {
+    if (this.hostAudio.src !== url && new URL(url, window.location.origin).href !== this.hostAudio.src) {
       this.hostAudio.pause();
-      this.hostAudio.src = ''; 
-      this.hostAudio = null;
-    }
-    if (!this.hostAudio) {
-      this.hostAudio = new Audio(url);
+      this.hostAudio.src = url;
+      this.hostAudio.load(); // Flush buffer and prep new mobile stream
     }
     this.hostAudio.volume = volume;
     
@@ -157,6 +156,20 @@ class AudioManager extends EventEmitter {
     }
   }
   
+  unlockMobileAudio() {
+    return new Promise((resolve) => {
+      this.hostAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      this.hostAudio.play().then(() => {
+        this.hostAudio.pause();
+        this.mobileAudioUnlocked = true;
+        resolve(true);
+      }).catch(e => {
+        console.warn('Unlock explicitly failed:', e);
+        resolve(false);
+      });
+    });
+  }
+
   resumeBlockedAudio() {
     if (this.hostAudio && this.hostAudio.src && this.hostAudio.paused) {
       this.hostAudio.play().catch(e => console.warn('Audio unlock failed', e));
