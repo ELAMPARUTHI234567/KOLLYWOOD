@@ -8,6 +8,7 @@ import Leaderboard from '../components/Leaderboard';
 import CountdownTimer from '../components/CountdownTimer';
 import { getAvatarEmoji } from '../components/avatars';
 import audioManager from '../socket/AudioManager';
+import api from '../services/api';
 import './GamePage.css';
 
 export default function GamePage() {
@@ -53,12 +54,8 @@ export default function GamePage() {
   useEffect(() => {
     const fetchSounds = async () => {
       try {
-        const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-        const res = await fetch(`${VITE_BACKEND_URL}/api/sounds`);
-        if (res.ok) {
-          const data = await res.json();
-          setSoundsList(data.filter(s => s.is_active));
-        }
+        const res = await api.get('/sounds');
+        setSoundsList(res.data.filter(s => s.is_active));
       } catch (e) {
         console.error('Failed to load active sounds', e);
       }

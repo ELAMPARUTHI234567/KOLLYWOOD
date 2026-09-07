@@ -1,5 +1,6 @@
 // AudioManager.js
 import { EventEmitter } from 'eventemitter3';
+import api from '../services/api';
 
 class AudioManager extends EventEmitter {
   constructor() {
@@ -54,27 +55,21 @@ class AudioManager extends EventEmitter {
 
   async loadSounds() {
     try {
-      const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-      const res = await fetch(`${VITE_BACKEND_URL}/api/sounds`);
-      if (res.ok) {
-        const data = await res.json();
-        const activeSounds = data.filter(s => s.is_active);
+      const res = await api.get('/sounds');
+      const activeSounds = res.data.filter(s => s.is_active);
         
-        activeSounds.forEach(s => {
-          if (s.category === 'Background Music') {
-             // Avoid restarting if it's the same URL
-             if (this.bgmAudio.src !== s.file_url) {
-               this.bgmAudio.src = s.file_url;
-               if (this.prefs.bgmEnabled && !this.prefs.muted) {
-                 this.bgmAudio.play().catch(e => console.warn('BGM auto-play blocked', e));
-               }
+      activeSounds.forEach(s => {
+        if (s.category === 'Background Music') {
+           if (this.bgmAudio.src !== s.file_url) {
+             this.bgmAudio.src = s.file_url;
+             if (this.prefs.bgmEnabled && !this.prefs.muted) {
+               this.bgmAudio.play().catch(e => console.warn('BGM auto-play blocked', e));
              }
-          } else {
-             // Cache effect URL
-             this.sounds[s.category] = s.file_url;
-          }
-        });
-      }
+           }
+        } else {
+           this.sounds[s.category] = s.file_url;
+        }
+      });
     } catch (e) {
       console.error('Failed to load sounds', e);
     }
