@@ -157,6 +157,12 @@ class AudioManager extends EventEmitter {
     }
   }
   
+  resumeBlockedAudio() {
+    if (this.hostAudio && this.hostAudio.src && this.hostAudio.paused) {
+      this.hostAudio.play().catch(e => console.warn('Audio unlock failed', e));
+    }
+  }
+  
   stopHostAudio(serverTime) {
     if (this.lastCommandTime && serverTime) {
        const newTime = new Date(serverTime.endsWith('Z') ? serverTime : serverTime + 'Z').getTime();

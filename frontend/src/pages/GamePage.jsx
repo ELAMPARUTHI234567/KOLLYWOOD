@@ -417,10 +417,9 @@ export default function GamePage() {
           )}
         </div>
 
-        {/* Right Sidebar */}
         <aside className="game-sidebar">
           {autoplayBlocked && (
-            <div className="game-autoplay-notice animate-shake" style={{ background: '#dc3545', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => { setAutoplayBlocked(false); audioManager.playEffect('Clue Released'); }}>
+            <div className="game-autoplay-notice animate-shake" style={{ background: '#dc3545', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px', textAlign: 'center', cursor: 'pointer' }} onClick={() => { setAutoplayBlocked(false); audioManager.resumeBlockedAudio(); }}>
               🔊 Tap to enable game audio
             </div>
           )}
