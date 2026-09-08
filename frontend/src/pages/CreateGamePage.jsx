@@ -8,7 +8,8 @@ const POINTS_OPTIONS = [50, 100, 200, 500, 1000];
 const TIME_OPTIONS = [90, 120, 150, 180];
 const GAP_OPTIONS = [5, 10, 15, 20, 30];
 
-export default function CreateGamePage() {
+export default function CreateGamePage({ mode } = {}) {
+  const isPictureMode = mode === 'picture-games';
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [avatarId, setAvatarId] = useState('');
@@ -47,6 +48,12 @@ export default function CreateGamePage() {
       sessionStorage.setItem('kw_user', JSON.stringify(user));
       sessionStorage.setItem('kw_game', JSON.stringify(game));
       sessionStorage.setItem('kw_is_host', 'true');
+      // Store game mode so QuestionSubmitPage can preselect question type
+      if (isPictureMode) {
+        sessionStorage.setItem('kw_game_mode', 'picture_games');
+      } else {
+        sessionStorage.removeItem('kw_game_mode');
+      }
       navigate(`/room/${game_code}`);
     } catch (err) {
       setError(err.friendlyMessage || err.response?.data?.error || err.message || 'Failed to create game. Please try again.');
@@ -68,8 +75,12 @@ export default function CreateGamePage() {
         <div className="create-page__card card animate-fadeIn">
           <div className="create-page__header">
             <span className="create-page__icon">🎮</span>
-            <h1 className="create-page__title">Create a New Game</h1>
-            <p className="create-page__subtitle">Set up your game and invite friends!</p>
+            <h1 className="create-page__title">{isPictureMode ? 'Create Picture Game' : 'Create a New Game'}</h1>
+            <p className="create-page__subtitle">
+              {isPictureMode
+                ? 'Set up a multiplayer Picture Games session!'
+                : 'Set up your game and invite friends!'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} id="form-create-game">

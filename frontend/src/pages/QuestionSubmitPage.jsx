@@ -70,8 +70,12 @@ export default function QuestionSubmitPage() {
   const userId = parseInt(sessionStorage.getItem('kw_user_id'));
   const user = JSON.parse(sessionStorage.getItem('kw_user') || '{}');
 
+  // Preselect question type if game was created via Picture Games flow
+  const storedMode = sessionStorage.getItem('kw_game_mode');
+  const defaultQuestionType = storedMode === 'picture_games' ? 'picture_games' : 'movie_dialogues';
+
   const [form, setForm] = useState({
-    question_type: 'movie_dialogues',
+    question_type: defaultQuestionType,
     movie: '', hero: '', heroine: '', song: '',
     clue_1: '', clue_2: '', clue_3: '',
     image_url: '', option_a: '', option_b: '', option_c: '', option_d: ''

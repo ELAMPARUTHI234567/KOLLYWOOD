@@ -41,6 +41,7 @@ export default function App() {
                   <Routes>
                     <Route path="/"                       element={<HomePage />} />
                     <Route path="/create"                 element={<CreateGamePage />} />
+                    <Route path="/picture-games"          element={<CreateGamePage mode="picture-games" />} />
                     <Route path="/join"                   element={<JoinGamePage />} />
                     <Route path="/room/:gameCode"         element={<WaitingRoomPage />} />
                     <Route path="/submit/:gameCode"       element={<QuestionSubmitPage />} />
