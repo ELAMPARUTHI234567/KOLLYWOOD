@@ -248,12 +248,13 @@ def register_socket_events(app):
 
     @socketio.on('player_guess')
     def on_player_guess(data):
-        """Handle a player's movie guess."""
+        """Handle a player's movie guess or Picture Game option choice."""
         game_code = data.get('game_code', '').upper()
         user_id = data.get('user_id')
         guess_text = (data.get('guess') or '').strip()
+        selected_option = (data.get('selected_option') or '').strip().upper()
 
-        if not guess_text:
+        if not guess_text and not selected_option:
             return
 
         with app.app_context():
@@ -293,9 +294,25 @@ def register_socket_events(app):
             if not user or not gp:
                 return
 
+            # Resolve option letter if selected_option or single letter A/B/C/D provided
+            opt_key = selected_option if selected_option in ('A', 'B', 'C', 'D') else (
+                guess_text.upper() if guess_text.upper() in ('A', 'B', 'C', 'D') else None
+            )
+
+            if opt_key:
+                opt_map = {'A': q.option_a, 'B': q.option_b, 'C': q.option_c, 'D': q.option_d}
+                resolved_guess = (opt_map.get(opt_key) or '').strip()
+                save_guess_text = f"Option {opt_key}: {resolved_guess}" if resolved_guess else opt_key
+            else:
+                resolved_guess = guess_text
+                save_guess_text = guess_text
+
+            if not resolved_guess:
+                return
+
             # Calculate elapsed time
             elapsed = get_question_elapsed(game.id)
-            is_correct = guess_text.lower().strip() == q.movie_answer.lower().strip()
+            is_correct = resolved_guess.lower().strip() == q.movie_answer.lower().strip()
 
             points = 0
             if is_correct:
@@ -306,7 +323,7 @@ def register_socket_events(app):
                 question_id=q.id,
                 player_id=user_id,
                 game_id=game.id,
-                guess_text=guess_text,
+                guess_text=save_guess_text,
                 is_correct=is_correct,
                 response_time_seconds=elapsed,
                 points_awarded=points,

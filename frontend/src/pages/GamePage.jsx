@@ -37,6 +37,7 @@ export default function GamePage() {
   const [nextQCountdown, setNextQCountdown] = useState(0);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [mobileAudioUnlocked, setMobileAudioUnlocked] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
   const guessInputRef = useRef(null);
 
   const [soundsList, setSoundsList] = useState([]);
@@ -169,6 +170,7 @@ export default function GamePage() {
       setGuess('');
       setGuessError('');
       setHasGuessedCorrectly(false);
+      setSelectedOption(null);
       setIsCreator(data.creator?.id === userId);
       setServerTime(data.server_time);
       setTransitioning(false);
@@ -361,7 +363,7 @@ export default function GamePage() {
             </div>
           )}
 
-          {/* Picture Game UI */}
+          {/* Picture Game UI — Kahoot Style */}
           {question?.question_type === 'picture_games' && (
             <div className="picture-game-ui animate-scaleIn">
               <div className="picture-game-image-wrapper">
@@ -372,24 +374,36 @@ export default function GamePage() {
                   onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x400/101015/FBBF24?text=Image+Not+Found'; }}
                 />
               </div>
+              <h2 className="picture-game-question-text">🎬 Which movie is this?</h2>
               <div className="picture-game-choices">
-                {['A', 'B', 'C', 'D'].map((opt, i) => {
-                  const label = opt === 'A' ? question.option_a : opt === 'B' ? question.option_b : opt === 'C' ? question.option_c : question.option_d;
+                {[
+                  { key: 'A', field: 'option_a', color: 'picture-choice--red' },
+                  { key: 'B', field: 'option_b', color: 'picture-choice--blue' },
+                  { key: 'C', field: 'option_c', color: 'picture-choice--amber' },
+                  { key: 'D', field: 'option_d', color: 'picture-choice--green' },
+                ].map(({ key, field, color }) => {
+                  const label = question[field];
+                  if (!label) return null;
+                  const isSelected = selectedOption === key;
+                  const isLocked = selectedOption !== null || hasGuessedCorrectly || isCreator || gameState === 'ANSWER_REVEAL';
                   return (
                     <button
-                      key={opt}
-                      className="picture-choice-btn btn btn-outline"
-                      disabled={!canGuess}
-                      onClick={(e) => {
-                        setGuess(label || 'Option ' + opt);
-                        // auto submit
-                        setTimeout(() => {
-                           document.getElementById('form-guess')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                        }, 50);
+                      key={key}
+                      className={`picture-choice-btn ${color} ${isSelected ? 'picture-choice--selected' : ''} ${isLocked && !isSelected ? 'picture-choice--locked' : ''}`}
+                      disabled={isLocked}
+                      onClick={() => {
+                        setSelectedOption(key);
+                        socket.emit('player_guess', {
+                          game_code: gameCode,
+                          user_id: userId,
+                          selected_option: key,
+                          guess: key,
+                        });
                       }}
                     >
-                      <span className="choice-letter">{opt}</span>
+                      <span className="choice-letter">{key}</span>
                       <span className="choice-text">{label}</span>
+                      {isSelected && <span className="choice-check">✓</span>}
                     </button>
                   );
                 })}

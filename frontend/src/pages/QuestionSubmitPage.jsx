@@ -63,6 +63,29 @@ const SAMPLE_QUESTIONS = [
   },
 ];
 
+const SAMPLE_PICTURE_QUESTIONS = [
+  {
+    question_type: 'picture_games',
+    image_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800',
+    option_a: 'Vikram',
+    option_b: 'Master',
+    option_c: 'Leo',
+    option_d: 'Jailer',
+    correct_option: 'A',
+    movie: 'Vikram',
+  },
+  {
+    question_type: 'picture_games',
+    image_url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800',
+    option_a: 'Ghilli',
+    option_b: 'Mankatha',
+    option_c: 'Thuppakki',
+    option_d: 'Anniyan',
+    correct_option: 'B',
+    movie: 'Mankatha',
+  },
+];
+
 export default function QuestionSubmitPage() {
   const { gameCode } = useParams();
   const navigate = useNavigate();
@@ -74,81 +97,43 @@ export default function QuestionSubmitPage() {
   const storedMode = sessionStorage.getItem('kw_game_mode');
   const defaultQuestionType = storedMode === 'picture_games' ? 'picture_games' : 'movie_dialogues';
 
+  const [correctOption, setCorrectOption] = useState('A');
   const [form, setForm] = useState({
     question_type: defaultQuestionType,
     movie: '', hero: '', heroine: '', song: '',
     clue_1: '', clue_2: '', clue_3: '',
     image_url: '', option_a: '', option_b: '', option_c: '', option_d: ''
   });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [submittedCount, setSubmittedCount] = useState(0);
-  const [totalPlayers, setTotalPlayers] = useState(0);
-  const [allReady, setAllReady] = useState(false);
-  const [players, setPlayers] = useState([]);
-  const [countdown, setCountdown] = useState(null);
-  const isHost = sessionStorage.getItem('kw_is_host') === 'true';
 
-  useEffect(() => {
-    if (!userId) { navigate('/'); return; }
-    if (!socket.connected) socket.connect();
-    socket.emit('join_game_room', { game_code: gameCode, user_id: userId });
-
-    socket.on('game_state', (data) => {
-      const p = data.players || [];
-      setPlayers(p);
-      setTotalPlayers(p.length);
-      const ready = p.filter(x => x.has_submitted_question).length;
-      setSubmittedCount(ready);
-      if (p.length > 0 && ready === p.length) {
-        setAllReady(true);
-      }
-    });
-
-    socket.on('submission_update', (data) => {
-      setSubmittedCount(data.submitted_count);
-      setTotalPlayers(data.total);
-      setAllReady(data.all_ready);
-      setPlayers(data.players || []);
-    });
-
-    socket.on('game_started', () => {
-      audioManager.playEffect('Game Start');
-      navigate(`/game/${gameCode}`);
-    });
-
-    return () => {
-      socket.off('game_state');
-      socket.off('submission_update');
-      socket.off('game_started');
-    };
-  }, [gameCode, userId, navigate]);
-
-  // Auto-start countdown when all players are ready
-  useEffect(() => {
-    if (!allReady) return;
-    setCountdown(5);
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          if (isHost) {
-            socket.emit('start_game', { game_code: gameCode, user_id: userId });
-          }
-          return 0;
+  const handleChange = (field) => (e) => {
+    const val = e.target.value;
+    setForm(f => {
+      const next = { ...f, [field]: val };
+      if (f.question_type === 'picture_games') {
+        const optionMap = { A: 'option_a', B: 'option_b', C: 'option_c', D: 'option_d' };
+        if (field === optionMap[correctOption]) {
+          next.movie = val;
         }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [allReady, isHost, gameCode, userId]);
+      }
+      return next;
+    });
+  };
 
-  const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+  const handleSelectCorrectOption = (opt) => {
+    setCorrectOption(opt);
+    const optionMap = { A: form.option_a, B: form.option_b, C: form.option_c, D: form.option_d };
+    setForm(f => ({ ...f, movie: optionMap[opt] || f.movie }));
+  };
 
   const handleQuickFill = () => {
-    const pick = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
-    setForm(pick);
+    if (form.question_type === 'picture_games') {
+      const pick = SAMPLE_PICTURE_QUESTIONS[Math.floor(Math.random() * SAMPLE_PICTURE_QUESTIONS.length)];
+      setForm(pick);
+      setCorrectOption(pick.correct_option || 'A');
+    } else {
+      const pick = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
+      setForm({ ...pick, question_type: form.question_type });
+    }
     setError('');
   };
 
@@ -162,8 +147,14 @@ export default function QuestionSubmitPage() {
         return;
       }
     } else if (question_type === 'picture_games') {
-      if (!movie || !image_url || !option_a || !option_b || !option_c || !option_d) {
-        setError('All fields are required for Picture Games!');
+      if (!image_url || !option_a || !option_b || !option_c || !option_d) {
+        setError('Image URL and all 4 options (A, B, C, D) are required for Picture Games!');
+        return;
+      }
+      const optionMap = { A: option_a, B: option_b, C: option_c, D: option_d };
+      const selectedAnswer = optionMap[correctOption];
+      if (!selectedAnswer) {
+        setError('The selected correct option cannot be blank!');
         return;
       }
     } else {
@@ -176,7 +167,14 @@ export default function QuestionSubmitPage() {
     setError('');
     setLoading(true);
     try {
-      await submitQuestion(gameCode, { ...form, user_id: userId });
+      const optionMap = { A: form.option_a, B: form.option_b, C: form.option_c, D: form.option_d };
+      const finalMovie = form.question_type === 'picture_games' ? (optionMap[correctOption] || form.movie) : form.movie;
+      
+      await submitQuestion(gameCode, {
+        ...form,
+        movie: finalMovie,
+        user_id: userId
+      });
       setSubmitted(true);
       socket.emit('question_submitted', { game_code: gameCode, user_id: userId });
     } catch (err) {
@@ -272,33 +270,86 @@ export default function QuestionSubmitPage() {
                   <div className="submit-grid">
                     {/* Main Settings */}
                     <div className="submit-col-main">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="q-movie">🎬 Movie Name (Answer)</label>
-                        <input id="q-movie" className="form-input" placeholder="Enter movie name" value={form.movie} onChange={handleChange('movie')} autoFocus />
-                      </div>
-                      {form.question_type === 'picture_games' && (
+                      {form.question_type === 'picture_games' ? (
                         <>
                           <div className="form-group">
                             <label className="form-label" htmlFor="q-image">🖼 Image URL</label>
-                            <input id="q-image" className="form-input" placeholder="Paste image URL here" value={form.image_url} onChange={handleChange('image_url')} />
+                            <input
+                              id="q-image"
+                              className="form-input"
+                              placeholder="Paste movie poster or scene image URL (e.g. https://...)"
+                              value={form.image_url}
+                              onChange={handleChange('image_url')}
+                            />
+                            {form.image_url && (
+                              <div style={{ marginTop: '8px', textAlign: 'center', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(251,191,36,0.3)', maxHeight: '180px' }}>
+                                <img
+                                  src={form.image_url}
+                                  alt="Preview"
+                                  style={{ maxWidth: '100%', maxHeight: '180px', objectFit: 'cover' }}
+                                  onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                              </div>
+                            )}
                           </div>
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="q-opt-a">A. Incorrect Movie Choice 1</label>
-                            <input id="q-opt-a" className="form-input" placeholder="Incorrect Choice" value={form.option_a} onChange={handleChange('option_a')} />
+
+                          <div className="form-group" style={{ marginBottom: '12px' }}>
+                            <label className="form-label">🎯 Four Answer Options (A, B, C, D)</label>
+                            <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginBottom: '10px' }}>
+                              Select the radio button next to the choice that is the <strong>CORRECT MOVIE ANSWER</strong>.
+                            </p>
                           </div>
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="q-opt-b">B. Incorrect Movie Choice 2</label>
-                            <input id="q-opt-b" className="form-input" placeholder="Incorrect Choice" value={form.option_b} onChange={handleChange('option_b')} />
-                          </div>
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="q-opt-c">C. Incorrect Movie Choice 3</label>
-                            <input id="q-opt-c" className="form-input" placeholder="Incorrect Choice" value={form.option_c} onChange={handleChange('option_c')} />
-                          </div>
-                          <div className="form-group">
-                            <label className="form-label" htmlFor="q-opt-d">D. Correct Movie (Must match above)</label>
-                            <input id="q-opt-d" className="form-input" placeholder="Just re-type the exact Movie Name here" value={form.option_d} onChange={handleChange('option_d')} />
-                          </div>
+
+                          {[
+                            { key: 'A', field: 'option_a', label: 'Option A' },
+                            { key: 'B', field: 'option_b', label: 'Option B' },
+                            { key: 'C', field: 'option_c', label: 'Option C' },
+                            { key: 'D', field: 'option_d', label: 'Option D' },
+                          ].map(({ key, field, label }) => {
+                            const isCorrect = correctOption === key;
+                            return (
+                              <div
+                                key={key}
+                                className="form-group"
+                                style={{
+                                  padding: '10px',
+                                  borderRadius: '8px',
+                                  background: isCorrect ? 'rgba(34, 197, 94, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                                  border: isCorrect ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid var(--border-glass)',
+                                  marginBottom: '10px',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                  <label className="form-label" htmlFor={`q-opt-${key.toLowerCase()}`} style={{ margin: 0 }}>
+                                    {isCorrect ? '✅ ' : '⚪ '}{label} {isCorrect ? '(Correct Answer)' : ''}
+                                  </label>
+                                  <label style={{ cursor: 'pointer', fontSize: '0.85rem', color: isCorrect ? 'var(--accent-green)' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <input
+                                      type="radio"
+                                      name="correct_option_radio"
+                                      checked={isCorrect}
+                                      onChange={() => handleSelectCorrectOption(key)}
+                                    />
+                                    Mark as Correct
+                                  </label>
+                                </div>
+                                <input
+                                  id={`q-opt-${key.toLowerCase()}`}
+                                  className="form-input"
+                                  placeholder={`Enter text for ${label}`}
+                                  value={form[field]}
+                                  onChange={handleChange(field)}
+                                />
+                              </div>
+                            );
+                          })}
                         </>
+                      ) : (
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="q-movie">🎬 Movie Name (Answer)</label>
+                          <input id="q-movie" className="form-input" placeholder="Enter movie name" value={form.movie} onChange={handleChange('movie')} autoFocus />
+                        </div>
                       )}
 
                       {form.question_type === 'movie_dialogues' && (

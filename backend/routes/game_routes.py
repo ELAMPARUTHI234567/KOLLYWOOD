@@ -234,8 +234,21 @@ def submit_question(game_code):
         if not all([hero, heroine, song, clue_1, clue_2, clue_3]):
             return jsonify({'error': 'All fields are required for Movie Dialogues'}), 400
     elif question_type == 'picture_games':
-        if not all([image_url, option_a, option_b, option_c, option_d]):
-            return jsonify({'error': 'All fields are required for Picture Games'}), 400
+        if not image_url:
+            return jsonify({'error': 'Image URL is required for Picture Games'}), 400
+        if option_a and option_b and option_c and option_d:
+            opts = [option_a.strip(), option_b.strip(), option_c.strip(), option_d.strip()]
+            if movie.strip().lower() not in [o.lower() for o in opts]:
+                return jsonify({'error': 'The correct movie answer must match one of Option A, B, C, or D'}), 400
+            all_options = opts
+        elif option_a and option_b and option_c:
+            all_options = [option_a.strip(), option_b.strip(), option_c.strip(), movie.strip()]
+        else:
+            return jsonify({'error': 'Options A, B, C, and D (or 3 wrong choices) are required for Picture Games'}), 400
+        
+        # ALWAYS shuffle so position of correct answer among A/B/C/D is completely randomized
+        random.shuffle(all_options)
+        option_a, option_b, option_c, option_d = all_options[0], all_options[1], all_options[2], all_options[3]
 
     try:
         game = Game.query.filter_by(game_code=game_code.upper()).first()
