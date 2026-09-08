@@ -4,7 +4,7 @@
    CSS Variables
    ===================== */
 :root {
-  --sidebar-width: 72px;
+  --sidebar-width: 220px;
   --mobile-nav-height: 62px;
   --bg-primary: #0a0a0f;
   --bg-secondary: #0f0f1a;

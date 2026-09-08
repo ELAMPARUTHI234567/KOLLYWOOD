@@ -86,13 +86,9 @@ export default function Sidebar() {
                   className={`sidebar-icon-link ${active ? 'sidebar-icon-link--active' : ''}`}
                   aria-label={item.label}
                 >
-                  <Icon className="sidebar-icon" size={22} strokeWidth={active ? 2.3 : 1.9} />
+                  <Icon className="sidebar-icon" size={20} strokeWidth={active ? 2.3 : 1.9} />
+                  <span className="sidebar-label">{item.label}</span>
                 </NavLink>
-                {/* Hover Tooltip */}
-                <div className="sidebar-tooltip">
-                  <span className="sidebar-tooltip__title">{item.label}</span>
-                  <span className="sidebar-tooltip__desc">{item.desc}</span>
-                </div>
               </div>
             );
           })}
@@ -113,13 +109,9 @@ export default function Sidebar() {
                   className={`sidebar-icon-link ${active ? 'sidebar-icon-link--active' : ''}`}
                   aria-label={item.label}
                 >
-                  <Icon className="sidebar-icon" size={22} strokeWidth={active ? 2.3 : 1.9} />
+                  <Icon className="sidebar-icon" size={20} strokeWidth={active ? 2.3 : 1.9} />
+                  <span className="sidebar-label">{item.label}</span>
                 </NavLink>
-                {/* Hover Tooltip */}
-                <div className="sidebar-tooltip">
-                  <span className="sidebar-tooltip__title">{item.label}</span>
-                  <span className="sidebar-tooltip__desc">{item.desc}</span>
-                </div>
               </div>
             );
           })}
