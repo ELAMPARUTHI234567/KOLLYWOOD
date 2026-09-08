@@ -137,29 +137,23 @@ def register_socket_events(app):
             if game.host_id != user_id:
                 emit('error', {'message': 'Only host can start question setup'})
                 return
-            if game.status != 'LOBBY':
-                emit('error', {'message': 'Game is not in lobby state'})
-                return
 
-            player_count = GamePlayer.query.filter_by(game_id=game.id).count()
-            if player_count < 2:
-                emit('error', {'message': 'Need at least 2 players to start'})
-                return
+            if not game.total_questions or game.total_questions < 1:
+                game.total_questions = 5
 
             game.status = 'QUESTION_SUBMISSION'
-            game.total_questions = player_count
             db.session.commit()
 
             players = get_players_with_scores(game.id)
             socketio.emit('question_submission_started', {
                 'game': game.to_dict(),
                 'players': players,
-                'total_questions': player_count,
+                'total_questions': game.total_questions,
             }, room=game_code)
 
     @socketio.on('question_submitted')
     def on_question_submitted(data):
-        """Notify room when a player submits their question (via Socket.IO)."""
+        """Notify room when a question is submitted (via Socket.IO)."""
         game_code = data.get('game_code', '').upper()
         user_id = data.get('user_id')
 
@@ -168,20 +162,18 @@ def register_socket_events(app):
             if not game:
                 return
 
-            submitted_count = GamePlayer.query.filter_by(
-                game_id=game.id, has_submitted_question=True
-            ).count()
-            total = GamePlayer.query.filter_by(game_id=game.id).count()
-            all_ready = submitted_count == total
+            created_count = Question.query.filter_by(game_id=game.id).count()
+            target_total = game.total_questions if game.total_questions > 0 else 5
+            all_ready = (created_count >= target_total)
 
-            if all_ready and game.status == 'QUESTION_SUBMISSION':
+            if all_ready:
                 game.status = 'READY'
                 db.session.commit()
 
             players = get_players_with_scores(game.id)
             socketio.emit('submission_update', {
-                'submitted_count': submitted_count,
-                'total': total,
+                'submitted_count': created_count,
+                'total': target_total,
                 'all_ready': all_ready,
                 'players': players,
                 'user_id': user_id,
@@ -201,8 +193,10 @@ def register_socket_events(app):
             if game.host_id != user_id:
                 emit('error', {'message': 'Only host can start the game'})
                 return
-            if game.status != 'READY':
-                emit('error', {'message': 'Not all players have submitted questions'})
+            
+            question_count = Question.query.filter_by(game_id=game.id).count()
+            if question_count < 1:
+                emit('error', {'message': 'Please create at least 1 question before starting the game!'})
                 return
 
             # Get first question

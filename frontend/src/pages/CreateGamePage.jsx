@@ -7,6 +7,7 @@ import './CreateGamePage.css';
 const POINTS_OPTIONS = [50, 100, 200, 500, 1000];
 const TIME_OPTIONS = [90, 120, 150, 180];
 const GAP_OPTIONS = [5, 10, 15, 20, 30];
+const QUESTION_COUNT_OPTIONS = [5, 10, 15, 20];
 
 export default function CreateGamePage({ mode } = {}) {
   const isPictureMode = mode === 'picture-games';
@@ -14,6 +15,8 @@ export default function CreateGamePage({ mode } = {}) {
   const [name, setName] = useState('');
   const [avatarId, setAvatarId] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(30);
+  const [totalQuestions, setTotalQuestions] = useState(5);
+  const [customQuestions, setCustomQuestions] = useState('');
   const [pointsPerQ, setPointsPerQ] = useState(100);
   const [customPoints, setCustomPoints] = useState('');
   const [questionTime, setQuestionTime] = useState(120);
@@ -22,6 +25,7 @@ export default function CreateGamePage({ mode } = {}) {
   const [error, setError] = useState('');
 
   const effectivePoints = pointsPerQ === 'custom' ? parseInt(customPoints) || 100 : pointsPerQ;
+  const effectiveQuestions = totalQuestions === 'custom' ? parseInt(customQuestions) || 5 : totalQuestions;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +38,7 @@ export default function CreateGamePage({ mode } = {}) {
         name: name.trim(),
         avatar_id: avatarId,
         max_players: maxPlayers,
+        total_questions: effectiveQuestions,
         points_per_question: effectivePoints,
         question_time: questionTime,
         clue_interval: 30, // Fixed 30s clue timeline (0s -> none, 30s -> clue 1, 60s -> clue 2, 90s -> clue 3)
@@ -110,6 +115,33 @@ export default function CreateGamePage({ mode } = {}) {
               <h2 className="create-section__title">⚙️ Game Settings</h2>
 
               <div className="create-settings-grid">
+                {/* Number of Questions */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="total-questions">Number of Questions</label>
+                  <select
+                    id="total-questions"
+                    className="form-select"
+                    value={totalQuestions}
+                    onChange={e => setTotalQuestions(e.target.value === 'custom' ? 'custom' : Number(e.target.value))}
+                  >
+                    {QUESTION_COUNT_OPTIONS.map(n => (
+                      <option key={n} value={n}>{n} Questions</option>
+                    ))}
+                    <option value="custom">Custom…</option>
+                  </select>
+                  {totalQuestions === 'custom' && (
+                    <input
+                      className="form-input mt-2"
+                      type="number"
+                      placeholder="Enter number of questions"
+                      value={customQuestions}
+                      onChange={e => setCustomQuestions(e.target.value)}
+                      min={1}
+                      max={50}
+                    />
+                  )}
+                </div>
+
                 {/* Max Players */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="max-players">Maximum Players</label>

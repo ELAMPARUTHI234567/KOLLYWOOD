@@ -22,7 +22,7 @@ class Game(db.Model):
         default='LOBBY'
     )
     current_question = db.Column(db.Integer, nullable=False, default=0)
-    total_questions = db.Column(db.Integer, nullable=False, default=0)
+    total_questions = db.Column(db.Integer, nullable=False, default=5)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships

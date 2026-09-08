@@ -82,6 +82,9 @@ def create_game():
         question_time = int(data.get('question_time', 120))
         clue_interval = 30  # Fixed 30s clue timeline (0s: no clues, 30s: clue 1, 60s: clue 2, 90s: clue 3)
         question_gap = int(data.get('question_gap', 10))
+        total_questions = int(data.get('total_questions', 5))
+        if total_questions < 1 or total_questions > 50:
+            total_questions = 5
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid numerical settings provided'}), 400
 
@@ -106,6 +109,7 @@ def create_game():
             question_time=question_time,
             clue_interval=clue_interval,
             question_gap=question_gap,
+            total_questions=total_questions,
             status='LOBBY',
         )
         db.session.add(game)
@@ -255,21 +259,24 @@ def submit_question(game_code):
         if not game:
             return jsonify({'error': 'Game not found'}), 404
 
-        if game.status != 'QUESTION_SUBMISSION':
-            return jsonify({'error': 'Game is not in question submission phase'}), 400
+        if game.status not in ('LOBBY', 'QUESTION_SUBMISSION', 'READY'):
+            return jsonify({'error': 'Game is not in question creation phase'}), 400
+
+        if game.host_id != user_id:
+            return jsonify({'error': 'Only the host is authorized to create questions for this game'}), 403
 
         gp = GamePlayer.query.filter_by(game_id=game.id, user_id=user_id).first()
         if not gp:
             return jsonify({'error': 'Player not found in this game'}), 404
 
-        if gp.has_submitted_question:
-            return jsonify({'error': 'You have already submitted your question'}), 400
+        existing_q_count = Question.query.filter_by(game_id=game.id).count()
+        q_order = existing_q_count + 1
 
         # Create question
         q = Question(
             game_id=game.id,
             creator_id=user_id,
-            question_order=gp.player_order,
+            question_order=q_order,
             movie_answer=movie,
             movie_first_letter=get_first_letter(movie),
             hero=hero,
@@ -290,28 +297,35 @@ def submit_question(game_code):
         )
         db.session.add(q)
         gp.has_submitted_question = True
-        db.session.commit()
 
-        # Broadcast submission progress to all players immediately
-        submitted_count = GamePlayer.query.filter_by(game_id=game.id, has_submitted_question=True).count()
-        total = GamePlayer.query.filter_by(game_id=game.id).count()
-        all_ready = (submitted_count == total)
+        created_q_count = existing_q_count + 1
+        target_total = game.total_questions if game.total_questions > 0 else 5
+        all_ready = (created_q_count >= target_total)
 
-        if all_ready and game.status == 'QUESTION_SUBMISSION':
+        if all_ready:
             game.status = 'READY'
-            db.session.commit()
+        else:
+            game.status = 'QUESTION_SUBMISSION'
+
+        db.session.commit()
 
         from extensions import socketio
         players = get_players_with_scores(game.id)
         socketio.emit('submission_update', {
-            'submitted_count': submitted_count,
-            'total': total,
+            'submitted_count': created_q_count,
+            'total': target_total,
             'all_ready': all_ready,
             'players': players,
             'user_id': user_id,
         }, room=game.game_code)
 
-        return jsonify({'success': True, 'message': 'Question submitted successfully', 'all_ready': all_ready})
+        return jsonify({
+            'success': True,
+            'message': 'Question submitted successfully',
+            'submitted_count': created_q_count,
+            'total_questions': target_total,
+            'all_ready': all_ready,
+        }), 201
     except Exception as e:
         db.session.rollback()
         print(f"[ERROR] submit_question failed: {e}")

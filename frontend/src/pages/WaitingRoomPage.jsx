@@ -15,6 +15,7 @@ export default function WaitingRoomPage() {
 
   const [players, setPlayers] = useState([]);
   const [game, setGame] = useState(storedGame);
+  const [submittedCount, setSubmittedCount] = useState(0);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -34,21 +35,41 @@ export default function WaitingRoomPage() {
 
     socket.on('game_state', (data) => {
       setGame(data.game);
-      setPlayers(data.players);
+      setPlayers(data.players || []);
+      if (data.submitted_count !== undefined) setSubmittedCount(data.submitted_count);
+      if (data.game?.status && ['GAME_START', 'QUESTION_ACTIVE', 'CLUE_1', 'CLUE_2', 'CLUE_3'].includes(data.game.status)) {
+        navigate(`/game/${gameCode}`);
+      }
     });
 
     socket.on('player_joined', (data) => {
-      setPlayers(data.players);
+      setPlayers(data.players || []);
     });
 
     socket.on('player_left', (data) => {
-      setPlayers(data.players);
+      setPlayers(data.players || []);
+    });
+
+    socket.on('submission_update', (data) => {
+      if (data.submitted_count !== undefined) {
+        setSubmittedCount(data.submitted_count);
+      }
     });
 
     socket.on('question_submission_started', (data) => {
       setGame(data.game);
       sessionStorage.setItem('kw_game', JSON.stringify(data.game));
-      navigate(`/submit/${gameCode}`);
+      if (isHost) {
+        navigate(`/submit/${gameCode}`);
+      }
+    });
+
+    socket.on('game_started', () => {
+      navigate(`/game/${gameCode}`);
+    });
+
+    socket.on('question_active', () => {
+      navigate(`/game/${gameCode}`);
     });
 
     socket.on('error', (data) => setError(data.message));
@@ -57,16 +78,25 @@ export default function WaitingRoomPage() {
       socket.off('game_state');
       socket.off('player_joined');
       socket.off('player_left');
+      socket.off('submission_update');
       socket.off('question_submission_started');
+      socket.off('game_started');
+      socket.off('question_active');
       socket.off('error');
     };
-  }, [gameCode, userId, navigate]);
+  }, [gameCode, userId, isHost, navigate]);
 
   const handleStartSetup = () => {
     socket.emit('start_question_setup', { game_code: gameCode, user_id: userId });
+    navigate(`/submit/${gameCode}`);
+  };
+
+  const handleStartGame = () => {
+    socket.emit('start_game', { game_code: gameCode, user_id: userId });
   };
 
   const hostPlayer = players.find(p => p.user_id === game.host_id);
+  const totalQ = game.total_questions || 5;
 
   return (
     <div className="waiting-page">
@@ -101,7 +131,7 @@ export default function WaitingRoomPage() {
             <div className="waiting-stats">
               <div className="waiting-stat">
                 <span className="waiting-stat__label">Players</span>
-                <span className="waiting-stat__value">{players.length} / {game.max_players}</span>
+                <span className="waiting-stat__value">{players.length} / {game.max_players || 30}</span>
               </div>
               <div className="waiting-stat">
                 <span className="waiting-stat__label">Host</span>
@@ -110,8 +140,12 @@ export default function WaitingRoomPage() {
                 </span>
               </div>
               <div className="waiting-stat">
-                <span className="waiting-stat__label">Questions</span>
-                <span className="waiting-stat__value">{players.length} (Auto)</span>
+                <span className="waiting-stat__label">Total Questions</span>
+                <span className="waiting-stat__value">{totalQ} Questions</span>
+              </div>
+              <div className="waiting-stat">
+                <span className="waiting-stat__label">Questions Created</span>
+                <span className="waiting-stat__value">{submittedCount} / {totalQ} {submittedCount >= totalQ ? '✅' : ''}</span>
               </div>
               <div className="waiting-stat">
                 <span className="waiting-stat__label">Clue Timeline</span>
@@ -119,31 +153,39 @@ export default function WaitingRoomPage() {
               </div>
               <div className="waiting-stat">
                 <span className="waiting-stat__label">Question Time</span>
-                <span className="waiting-stat__value">{game.question_time}s</span>
-              </div>
-              <div className="waiting-stat">
-                <span className="waiting-stat__label">Gap Between Q's</span>
-                <span className="waiting-stat__value">{game.question_gap}s</span>
+                <span className="waiting-stat__value">{game.question_time || 120}s</span>
               </div>
             </div>
 
             {error && <p className="waiting-error">{error}</p>}
 
             {isHost && (
-              <button
-                className="btn btn-gold btn-lg waiting-start-btn animate-pulseGlow"
-                id="btn-start-setup"
-                onClick={handleStartSetup}
-                disabled={players.length < 2}
-              >
-                🚀 START QUESTION SETUP
-              </button>
+              <div className="waiting-actions-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+                <button
+                  className="btn btn-purple btn-lg waiting-start-btn"
+                  onClick={handleStartSetup}
+                >
+                  ✏️ CREATE / ADD QUESTIONS ({submittedCount} / {totalQ})
+                </button>
+                <button
+                  className="btn btn-gold btn-lg waiting-start-btn animate-pulseGlow"
+                  id="btn-start-game"
+                  onClick={handleStartGame}
+                  disabled={submittedCount < 1}
+                >
+                  🎬 START GAME NOW {submittedCount < 1 ? '(Add 1+ Question First)' : ''}
+                </button>
+              </div>
             )}
 
             {!isHost && (
-              <div className="waiting-for-host">
+              <div className="waiting-for-host" style={{ marginTop: '15px' }}>
                 <div className="waiting-spinner" />
-                <span>Waiting for host to start…</span>
+                <span>
+                  {submittedCount >= totalQ
+                    ? 'Questions ready! Host will start the game soon…'
+                    : `Host is creating questions (${submittedCount} / ${totalQ})…`}
+                </span>
               </div>
             )}
           </div>
@@ -152,7 +194,7 @@ export default function WaitingRoomPage() {
           <div className="waiting-players card animate-slideInRight">
             <div className="waiting-players__header">
               <h2>Players in Room</h2>
-              <span className="badge badge-gold">{players.length} / {game.max_players}</span>
+              <span className="badge badge-gold">{players.length} / {game.max_players || 30}</span>
             </div>
 
             <div className="waiting-players__list">

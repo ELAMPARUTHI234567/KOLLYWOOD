@@ -98,16 +98,22 @@ export default function QuestionSubmitPage() {
   const storedMode = sessionStorage.getItem('kw_game_mode');
   const defaultQuestionType = storedMode === 'picture_games' ? 'picture_games' : 'movie_dialogues';
 
+  const storedGame = JSON.parse(sessionStorage.getItem('kw_game') || '{}');
+  const totalQuestions = storedGame.total_questions || 5;
+
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [submittedCount, setSubmittedCount] = useState(0);
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [allReady, setAllReady] = useState(false);
   const [players, setPlayers] = useState([]);
   const [countdown, setCountdown] = useState(null);
 
-  const [correctOption, setCorrectOption] = useState('A');
+  const [wrong1, setWrong1] = useState('');
+  const [wrong2, setWrong2] = useState('');
+  const [wrong3, setWrong3] = useState('');
   const [form, setForm] = useState({
     question_type: defaultQuestionType,
     movie: '', hero: '', heroine: '', song: '',
@@ -123,34 +129,25 @@ export default function QuestionSubmitPage() {
     socket.emit('join_game_room', { game_code: gameCode, user_id: userId });
 
     const handleGameState = (data) => {
-      if (data && data.players) {
-        setPlayers(data.players);
-        setTotalPlayers(data.players.length);
-        const me = data.players.find(p => p.user_id === userId);
-        if (me && me.has_submitted_question) {
-          setSubmitted(true);
+      if (data) {
+        if (data.game) {
+          sessionStorage.setItem('kw_game', JSON.stringify(data.game));
         }
-        const submittedNum = data.players.filter(p => p.has_submitted_question).length;
-        setSubmittedCount(submittedNum);
-        if (submittedNum === data.players.length && data.players.length > 0) {
-          setAllReady(true);
+        if (data.players) {
+          setPlayers(data.players);
+          setTotalPlayers(data.players.length);
+        }
+        if (data.submitted_count !== undefined) {
+          setSubmittedCount(data.submitted_count);
         }
       }
     };
 
     const handleSubmissionUpdate = (data) => {
       if (data) {
-        if (data.players) {
-          setPlayers(data.players);
-          setTotalPlayers(data.players.length);
-          const submittedNum = data.players.filter(p => p.has_submitted_question).length;
-          setSubmittedCount(submittedNum);
-          if (submittedNum === data.players.length && data.players.length > 0) {
-            setAllReady(true);
-          }
-        }
+        if (data.players) setPlayers(data.players);
         if (data.submitted_count !== undefined) setSubmittedCount(data.submitted_count);
-        if (data.total_players !== undefined) setTotalPlayers(data.total_players);
+        if (data.total !== undefined) setTotalPlayers(data.total);
         if (data.all_ready !== undefined) setAllReady(data.all_ready);
       }
     };
@@ -172,29 +169,21 @@ export default function QuestionSubmitPage() {
 
   const handleChange = (field) => (e) => {
     const val = e.target.value;
-    setForm(f => {
-      const next = { ...f, [field]: val };
-      if (f.question_type === 'picture_games') {
-        const optionMap = { A: 'option_a', B: 'option_b', C: 'option_c', D: 'option_d' };
-        if (field === optionMap[correctOption]) {
-          next.movie = val;
-        }
-      }
-      return next;
-    });
-  };
-
-  const handleSelectCorrectOption = (opt) => {
-    setCorrectOption(opt);
-    const optionMap = { A: form.option_a, B: form.option_b, C: form.option_c, D: form.option_d };
-    setForm(f => ({ ...f, movie: optionMap[opt] || f.movie }));
+    setForm(f => ({ ...f, [field]: val }));
   };
 
   const handleQuickFill = () => {
     if (form.question_type === 'picture_games') {
       const pick = SAMPLE_PICTURE_QUESTIONS[Math.floor(Math.random() * SAMPLE_PICTURE_QUESTIONS.length)];
-      setForm(pick);
-      setCorrectOption(pick.correct_option || 'A');
+      setForm({
+        ...form,
+        question_type: 'picture_games',
+        image_url: pick.image_url,
+        movie: pick.movie,
+      });
+      setWrong1(pick.option_b || 'Master');
+      setWrong2(pick.option_c || 'Leo');
+      setWrong3(pick.option_d || 'Jailer');
     } else {
       const pick = SAMPLE_QUESTIONS[Math.floor(Math.random() * SAMPLE_QUESTIONS.length)];
       setForm({ ...pick, question_type: form.question_type });
@@ -204,7 +193,7 @@ export default function QuestionSubmitPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { question_type, movie, hero, heroine, song, clue_1, clue_2, clue_3, image_url, option_a, option_b, option_c, option_d } = form;
+    const { question_type, movie, hero, heroine, song, clue_1, clue_2, clue_3, image_url } = form;
     
     if (question_type === 'movie_dialogues') {
       if (!movie || !hero || !heroine || !song || !clue_1 || !clue_2 || !clue_3) {
@@ -212,14 +201,8 @@ export default function QuestionSubmitPage() {
         return;
       }
     } else if (question_type === 'picture_games') {
-      if (!image_url || !option_a || !option_b || !option_c || !option_d) {
-        setError('Image URL and all 4 options (A, B, C, D) are required for Picture Games!');
-        return;
-      }
-      const optionMap = { A: option_a, B: option_b, C: option_c, D: option_d };
-      const selectedAnswer = optionMap[correctOption];
-      if (!selectedAnswer) {
-        setError('The selected correct option cannot be blank!');
+      if (!image_url || !movie || !wrong1 || !wrong2 || !wrong3) {
+        setError('Image URL, Correct Movie Answer, and 3 Wrong Choices are required!');
         return;
       }
     } else {
@@ -232,18 +215,42 @@ export default function QuestionSubmitPage() {
     setError('');
     setLoading(true);
     try {
-      const optionMap = { A: form.option_a, B: form.option_b, C: form.option_c, D: form.option_d };
-      const finalMovie = form.question_type === 'picture_games' ? (optionMap[correctOption] || form.movie) : form.movie;
-      
-      await submitQuestion(gameCode, {
+      const payload = {
         ...form,
-        movie: finalMovie,
-        user_id: userId
-      });
-      setSubmitted(true);
+        user_id: userId,
+      };
+
+      if (question_type === 'picture_games') {
+        payload.option_a = wrong1;
+        payload.option_b = wrong2;
+        payload.option_c = wrong3;
+        payload.option_d = movie; // backend will shuffle options A, B, C, D automatically
+      }
+      
+      const res = await submitQuestion(gameCode, payload);
+      const newCount = res.data?.submitted_count || (submittedCount + 1);
+      setSubmittedCount(newCount);
+      
+      if (newCount >= totalQuestions) {
+        setAllReady(true);
+        setSubmitted(true);
+      }
+
+      setSuccessMsg(`✅ Question ${newCount} of ${totalQuestions} created successfully!`);
       socket.emit('question_submitted', { game_code: gameCode, user_id: userId });
+
+      // Reset form for next question
+      setForm({
+        question_type: form.question_type,
+        movie: '', hero: '', heroine: '', song: '',
+        clue_1: '', clue_2: '', clue_3: '',
+        image_url: '', option_a: '', option_b: '', option_c: '', option_d: ''
+      });
+      setWrong1('');
+      setWrong2('');
+      setWrong3('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to submit. Try again.');
+      setError(err.response?.data?.error || 'Failed to submit question. Try again.');
     } finally {
       setLoading(false);
     }
@@ -375,57 +382,56 @@ export default function QuestionSubmitPage() {
                             )}
                           </div>
 
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-correct-movie">🎬 Correct Movie Answer</label>
+                            <input
+                              id="q-correct-movie"
+                              className="form-input"
+                              placeholder="Enter the correct movie name (e.g. Vikram)"
+                              value={form.movie}
+                              onChange={handleChange('movie')}
+                            />
+                          </div>
+
                           <div className="form-group" style={{ marginBottom: '12px' }}>
-                            <label className="form-label">🎯 Four Answer Options (A, B, C, D)</label>
+                            <label className="form-label">🎯 Three Wrong Movie Choices</label>
                             <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginBottom: '10px' }}>
-                              Select the radio button next to the choice that is the <strong>CORRECT MOVIE ANSWER</strong>.
+                              Enter 3 incorrect options. The backend will automatically randomize the positions of choices A, B, C, and D.
                             </p>
                           </div>
 
-                          {[
-                            { key: 'A', field: 'option_a', label: 'Option A' },
-                            { key: 'B', field: 'option_b', label: 'Option B' },
-                            { key: 'C', field: 'option_c', label: 'Option C' },
-                            { key: 'D', field: 'option_d', label: 'Option D' },
-                          ].map(({ key, field, label }) => {
-                            const isCorrect = correctOption === key;
-                            return (
-                              <div
-                                key={key}
-                                className="form-group"
-                                style={{
-                                  padding: '10px',
-                                  borderRadius: '8px',
-                                  background: isCorrect ? 'rgba(34, 197, 94, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                                  border: isCorrect ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid var(--border-glass)',
-                                  marginBottom: '10px',
-                                  transition: 'all 0.2s ease'
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                  <label className="form-label" htmlFor={`q-opt-${key.toLowerCase()}`} style={{ margin: 0 }}>
-                                    {isCorrect ? '✅ ' : '⚪ '}{label} {isCorrect ? '(Correct Answer)' : ''}
-                                  </label>
-                                  <label style={{ cursor: 'pointer', fontSize: '0.85rem', color: isCorrect ? 'var(--accent-green)' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <input
-                                      type="radio"
-                                      name="correct_option_radio"
-                                      checked={isCorrect}
-                                      onChange={() => handleSelectCorrectOption(key)}
-                                    />
-                                    Mark as Correct
-                                  </label>
-                                </div>
-                                <input
-                                  id={`q-opt-${key.toLowerCase()}`}
-                                  className="form-input"
-                                  placeholder={`Enter text for ${label}`}
-                                  value={form[field]}
-                                  onChange={handleChange(field)}
-                                />
-                              </div>
-                            );
-                          })}
+                          <div className="form-group" style={{ marginBottom: '10px' }}>
+                            <label className="form-label" htmlFor="wrong-1">❌ Wrong Choice 1</label>
+                            <input
+                              id="wrong-1"
+                              className="form-input"
+                              placeholder="Enter wrong choice 1"
+                              value={wrong1}
+                              onChange={e => setWrong1(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '10px' }}>
+                            <label className="form-label" htmlFor="wrong-2">❌ Wrong Choice 2</label>
+                            <input
+                              id="wrong-2"
+                              className="form-input"
+                              placeholder="Enter wrong choice 2"
+                              value={wrong2}
+                              onChange={e => setWrong2(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '10px' }}>
+                            <label className="form-label" htmlFor="wrong-3">❌ Wrong Choice 3</label>
+                            <input
+                              id="wrong-3"
+                              className="form-input"
+                              placeholder="Enter wrong choice 3"
+                              value={wrong3}
+                              onChange={e => setWrong3(e.target.value)}
+                            />
+                          </div>
                         </>
                       ) : (
                         <div className="form-group">
@@ -510,60 +516,81 @@ export default function QuestionSubmitPage() {
                     )}
                   </div>
 
+                  {successMsg && (
+                    <div className="submit-success-banner animate-fadeIn" style={{ margin: '15px 0', padding: '12px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.4)', borderRadius: '8px', color: '#4ade80', fontSize: '0.95rem' }}>
+                      {successMsg}
+                    </div>
+                  )}
+
                   {error && <p className="submit-error animate-shake">{error}</p>}
 
-                  <button
-                    className="btn btn-gold btn-lg submit-btn"
-                    type="submit"
-                    id="btn-submit-question"
-                    disabled={loading}
-                  >
-                    {loading ? '⏳ Submitting…' : '✅ SUBMIT QUESTION'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                    <button
+                      className="btn btn-gold btn-lg submit-btn"
+                      type="submit"
+                      id="btn-submit-question"
+                      disabled={loading || submittedCount >= totalQuestions}
+                      style={{ flex: 1 }}
+                    >
+                      {loading ? '⏳ Submitting…' : (submittedCount >= totalQuestions ? '✅ ALL QUESTIONS CREATED' : `➕ SAVE & ADD QUESTION (${submittedCount + 1}/${totalQuestions})`)}
+                    </button>
+                    
+                    <button
+                      className="btn btn-outline btn-lg"
+                      type="button"
+                      onClick={() => navigate(`/room/${gameCode}`)}
+                      style={{ flex: '0 0 auto' }}
+                    >
+                      ← Lobby
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
           </div>
 
-          {/* Sidebar: Submission Progress */}
+          {/* Sidebar: Question Progress */}
           <div className="submit-sidebar">
             <div className="card animate-slideInRight">
-              <h2 className="submit-progress__title">Question Submissions</h2>
+              <h2 className="submit-progress__title">Questions Created</h2>
               <div className="submit-progress__count">
                 <span className="submit-progress__num">{submittedCount}</span>
                 <span className="submit-progress__sep">/</span>
-                <span className="submit-progress__total">{totalPlayers}</span>
+                <span className="submit-progress__total">{totalQuestions}</span>
               </div>
 
               <div className="submit-progress-bar">
                 <div
                   className="submit-progress-bar__fill"
-                  style={{ width: totalPlayers ? `${(submittedCount / totalPlayers) * 100}%` : '0%' }}
+                  style={{ width: totalQuestions ? `${Math.min(100, (submittedCount / totalQuestions) * 100)}%` : '0%' }}
                 />
               </div>
 
-              {allReady && (
+              {submittedCount >= totalQuestions && (
                 <div className="submit-all-ready animate-scaleIn">
-                  ✅ ALL PLAYERS READY
+                  ✅ TARGET QUESTIONS REACHED!
                 </div>
               )}
 
-              {isHost && allReady && !submitted && (
+              {isHost && (
                 <button
-                  className="btn btn-gold btn-lg submit-start-btn"
+                  className="btn btn-gold btn-lg submit-start-btn animate-pulseGlow"
                   id="btn-start-game-sidebar"
                   onClick={handleStartGame}
+                  disabled={submittedCount < 1}
+                  style={{ marginTop: '16px', width: '100%' }}
                 >
-                  🎬 START GAME
+                  🎬 START GAME NOW {submittedCount < 1 ? '(Add 1+ Q)' : ''}
                 </button>
               )}
 
-              <div className="submit-player-list">
+              <div className="submit-player-list" style={{ marginTop: '20px' }}>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '8px' }}>Joined Players ({players.length})</p>
                 {players.map(p => (
                   <div key={p.user_id} className="submit-player-row">
                     <span>{getAvatarEmoji(p.avatar_id)}</span>
                     <span className="submit-player-row__name">{p.name}</span>
-                    <span>{p.has_submitted_question ? '✅' : '⏳'}</span>
+                    <span>{p.is_connected ? '🟢' : '⚪'}</span>
                   </div>
                 ))}
               </div>
