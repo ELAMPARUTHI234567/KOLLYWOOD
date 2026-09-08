@@ -71,8 +71,10 @@ export default function QuestionSubmitPage() {
   const user = JSON.parse(sessionStorage.getItem('kw_user') || '{}');
 
   const [form, setForm] = useState({
+    question_type: 'movie_dialogues',
     movie: '', hero: '', heroine: '', song: '',
     clue_1: '', clue_2: '', clue_3: '',
+    image_url: '', option_a: '', option_b: '', option_c: '', option_d: ''
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -148,11 +150,25 @@ export default function QuestionSubmitPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { movie, hero, heroine, song, clue_1, clue_2, clue_3 } = form;
-    if (!movie || !hero || !heroine || !song || !clue_1 || !clue_2 || !clue_3) {
-      setError('All fields are required!');
-      return;
+    const { question_type, movie, hero, heroine, song, clue_1, clue_2, clue_3, image_url, option_a, option_b, option_c, option_d } = form;
+    
+    if (question_type === 'movie_dialogues') {
+      if (!movie || !hero || !heroine || !song || !clue_1 || !clue_2 || !clue_3) {
+        setError('All fields are required for Movie Dialogues!');
+        return;
+      }
+    } else if (question_type === 'picture_games') {
+      if (!movie || !image_url || !option_a || !option_b || !option_c || !option_d) {
+        setError('All fields are required for Picture Games!');
+        return;
+      }
+    } else {
+      if (!movie) {
+        setError('Movie name (Answer) is required!');
+        return;
+      }
     }
+    
     setError('');
     setLoading(true);
     try {
@@ -233,27 +249,78 @@ export default function QuestionSubmitPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} id="form-submit-question">
+                  <div className="form-group" style={{ marginBottom: '20px' }}>
+                    <label className="form-label" htmlFor="q-type">📋 Question Type</label>
+                    <select
+                      id="q-type"
+                      className="form-select"
+                      value={form.question_type}
+                      onChange={handleChange('question_type')}
+                      style={{ fontSize: '16px', padding: '10px' }}
+                    >
+                      <option value="movie_dialogues">Movie Dialogues</option>
+                      <option value="songs_bgm">Songs / BGM</option>
+                      <option value="picture_games">Picture Games</option>
+                      <option value="custom_question">Custom Question</option>
+                    </select>
+                  </div>
+
                   <div className="submit-grid">
-                    {/* Movie & Clues */}
+                    {/* Main Settings */}
                     <div className="submit-col-main">
                       <div className="form-group">
                         <label className="form-label" htmlFor="q-movie">🎬 Movie Name (Answer)</label>
                         <input id="q-movie" className="form-input" placeholder="Enter movie name" value={form.movie} onChange={handleChange('movie')} autoFocus />
                       </div>
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="q-hero">👨 Hero Name</label>
-                        <input id="q-hero" className="form-input" placeholder="Enter hero name" value={form.hero} onChange={handleChange('hero')} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="q-heroine">👩 Heroine Name</label>
-                        <input id="q-heroine" className="form-input" placeholder="Enter heroine name" value={form.heroine} onChange={handleChange('heroine')} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="q-song">🎵 Song Name</label>
-                        <input id="q-song" className="form-input" placeholder="Enter song name" value={form.song} onChange={handleChange('song')} />
-                      </div>
+                      {form.question_type === 'picture_games' && (
+                        <>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-image">🖼 Image URL</label>
+                            <input id="q-image" className="form-input" placeholder="Paste image URL here" value={form.image_url} onChange={handleChange('image_url')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-opt-a">A. Incorrect Movie Choice 1</label>
+                            <input id="q-opt-a" className="form-input" placeholder="Incorrect Choice" value={form.option_a} onChange={handleChange('option_a')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-opt-b">B. Incorrect Movie Choice 2</label>
+                            <input id="q-opt-b" className="form-input" placeholder="Incorrect Choice" value={form.option_b} onChange={handleChange('option_b')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-opt-c">C. Incorrect Movie Choice 3</label>
+                            <input id="q-opt-c" className="form-input" placeholder="Incorrect Choice" value={form.option_c} onChange={handleChange('option_c')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-opt-d">D. Correct Movie (Must match above)</label>
+                            <input id="q-opt-d" className="form-input" placeholder="Just re-type the exact Movie Name here" value={form.option_d} onChange={handleChange('option_d')} />
+                          </div>
+                        </>
+                      )}
 
-                      {/* First letters preview */}
+                      {form.question_type === 'movie_dialogues' && (
+                        <>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-hero">👨 Hero Name</label>
+                            <input id="q-hero" className="form-input" placeholder="Enter hero name" value={form.hero} onChange={handleChange('hero')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-heroine">👩 Heroine Name</label>
+                            <input id="q-heroine" className="form-input" placeholder="Enter heroine name" value={form.heroine} onChange={handleChange('heroine')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label" htmlFor="q-song">🎵 Song Name</label>
+                            <input id="q-song" className="form-input" placeholder="Enter song name" value={form.song} onChange={handleChange('song')} />
+                          </div>
+                        </>
+                      )}
+
+                      {form.question_type === 'songs_bgm' && (
+                         <div className="form-group" style={{marginTop: '10px'}}>
+                           <p style={{color: '#888'}}>For Songs / BGM, you can just fill in the movie name and clues. The Host will play the audio during the game using their Sounds Dashboard!</p>
+                         </div>
+                      )}
+
+                      {/* First letters preview (only relevant for movie dialogues typically) */}
                       <div className="submit-preview">
                         <p className="submit-preview__label">Players will see these letters:</p>
                         <div className="submit-preview__letters">

@@ -340,22 +340,62 @@ export default function GamePage() {
       <main className="game-main">
         {/* Center column */}
         <div className="game-center">
-          {/* Hint Cards */}
-          <div className="game-hints">
-            <HintCards question={question} />
-          </div>
+          {/* Hint Cards (only for movie dialogues) */}
+          {question?.question_type === 'movie_dialogues' && (
+            <div className="game-hints">
+              <HintCards question={question} />
+            </div>
+          )}
 
-          {/* Clues */}
-          <div className="game-clues">
-            {[1, 2, 3].map(n => (
-              <ClueBox
-                key={n}
-                clueNum={n}
-                text={clueTexts[n]}
-                isRevealed={cluesRevealed >= n}
-              />
-            ))}
-          </div>
+          {/* Clues (not for picture games) */}
+          {question?.question_type !== 'picture_games' && question?.question_type !== 'custom_question' && (
+            <div className="game-clues">
+              {[1, 2, 3].map(n => (
+                <ClueBox
+                  key={n}
+                  clueNum={n}
+                  text={clueTexts[n]}
+                  isRevealed={cluesRevealed >= n}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Picture Game UI */}
+          {question?.question_type === 'picture_games' && (
+            <div className="picture-game-ui animate-scaleIn">
+              <div className="picture-game-image-wrapper">
+                <img 
+                  src={question.image_url} 
+                  alt="Movie clue" 
+                  className="picture-game-image" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x400/101015/FBBF24?text=Image+Not+Found'; }}
+                />
+              </div>
+              <div className="picture-game-choices">
+                {['A', 'B', 'C', 'D'].map((opt, i) => {
+                  const label = opt === 'A' ? question.option_a : opt === 'B' ? question.option_b : opt === 'C' ? question.option_c : question.option_d;
+                  return (
+                    <button
+                      key={opt}
+                      className="picture-choice-btn btn btn-outline"
+                      disabled={!canGuess}
+                      onClick={(e) => {
+                        setGuess(label || 'Option ' + opt);
+                        // auto submit
+                        setTimeout(() => {
+                           document.getElementById('form-guess')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                        }, 50);
+                      }}
+                    >
+                      <span className="choice-letter">{opt}</span>
+                      <span className="choice-text">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Guess Input */}
           <div className="game-guess-section">
@@ -376,26 +416,31 @@ export default function GamePage() {
               </div>
             ) : (
               <form onSubmit={handleGuess} className="game-guess-form" id="form-guess">
-                <input
-                  ref={guessInputRef}
-                  className="game-guess-input"
-                  type="text"
-                  placeholder="Guess the Movie…"
-                  value={guess}
-                  onChange={e => { setGuess(e.target.value); setGuessError(''); }}
-                  disabled={!canGuess}
-                  maxLength={100}
-                  autoComplete="off"
-                  id="input-guess"
-                />
-                <button
-                  className="btn btn-gold game-guess-btn"
-                  type="submit"
-                  id="btn-guess"
-                  disabled={!canGuess || !guess.trim()}
-                >
-                  GUESS
-                </button>
+                {question?.question_type !== 'picture_games' && (
+                  <input
+                    ref={guessInputRef}
+                    className="game-guess-input"
+                    type="text"
+                    placeholder="Guess the Movie…"
+                    value={guess}
+                    onChange={e => { setGuess(e.target.value); setGuessError(''); }}
+                    disabled={!canGuess}
+                    maxLength={100}
+                    autoComplete="off"
+                    id="input-guess"
+                  />
+                )}
+                {question?.question_type !== 'picture_games' && (
+                  <button
+                    className="btn btn-gold game-guess-btn"
+                    type="submit"
+                    id="btn-guess"
+                    disabled={!canGuess || !guess.trim()}
+                  >
+                    GUESS
+                  </button>
+                )}
+                <input type="hidden" value={guess} />
               </form>
             )}
             {guessError && <p className="game-guess-error animate-shake">{guessError}</p>}

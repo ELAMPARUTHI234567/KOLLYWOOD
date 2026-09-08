@@ -25,7 +25,14 @@ class Question(db.Model):
     clue_1 = db.Column(db.String(255), nullable=False)
     clue_2 = db.Column(db.String(255), nullable=False)
     clue_3 = db.Column(db.String(255), nullable=False)
+    
+    # Picture Game & Custom types
+    question_type = db.Column(db.String(50), default='movie_dialogues', nullable=False)
     image_url = db.Column(db.Text, nullable=True)
+    option_a = db.Column(db.String(200), nullable=True)
+    option_b = db.Column(db.String(200), nullable=True)
+    option_c = db.Column(db.String(200), nullable=True)
+    option_d = db.Column(db.String(200), nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -47,6 +54,12 @@ class Question(db.Model):
             'clue_1': self.clue_1 if clues_revealed >= 1 else None,
             'clue_2': self.clue_2 if clues_revealed >= 2 else None,
             'clue_3': self.clue_3 if clues_revealed >= 3 else None,
+            'question_type': self.question_type,
+            'image_url': self.image_url,
+            'option_a': self.option_a,
+            'option_b': self.option_b,
+            'option_c': self.option_c,
+            'option_d': self.option_d,
         }
         return data
     
@@ -67,4 +80,10 @@ class Question(db.Model):
             'clue_1': self.clue_1,
             'clue_2': self.clue_2,
             'clue_3': self.clue_3,
+            'question_type': self.question_type,
+            'image_url': self.image_url,
+            'option_a': self.option_a,
+            'option_b': self.option_b,
+            'option_c': self.option_c,
+            'option_d': self.option_d,
         }

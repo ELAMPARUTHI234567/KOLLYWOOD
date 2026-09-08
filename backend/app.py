@@ -96,7 +96,12 @@ def create_app():
                     "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL",
                     "ALTER TABLE users ADD COLUMN auth_provider ENUM('guest','email') NOT NULL DEFAULT 'guest'",
                     "ALTER TABLE users ADD COLUMN display_name VARCHAR(100) NULL",
-                    "ALTER TABLE users ADD UNIQUE INDEX idx_users_email (email)"
+                    "ALTER TABLE users ADD UNIQUE INDEX idx_users_email (email)",
+                    "ALTER TABLE questions ADD COLUMN question_type VARCHAR(50) DEFAULT 'movie_dialogues'",
+                    "ALTER TABLE questions ADD COLUMN option_a VARCHAR(200) NULL",
+                    "ALTER TABLE questions ADD COLUMN option_b VARCHAR(200) NULL",
+                    "ALTER TABLE questions ADD COLUMN option_c VARCHAR(200) NULL",
+                    "ALTER TABLE questions ADD COLUMN option_d VARCHAR(200) NULL"
                 ]
                 with db.engine.connect() as conn:
                     for sql in auth_migrations:

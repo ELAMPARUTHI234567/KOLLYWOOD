@@ -220,9 +220,22 @@ def submit_question(game_code):
     clue_1 = (data.get('clue_1') or '').strip()
     clue_2 = (data.get('clue_2') or '').strip()
     clue_3 = (data.get('clue_3') or '').strip()
+    question_type = (data.get('question_type') or 'movie_dialogues').strip()
+    image_url = (data.get('image_url') or '').strip()
+    option_a = (data.get('option_a') or '').strip()
+    option_b = (data.get('option_b') or '').strip()
+    option_c = (data.get('option_c') or '').strip()
+    option_d = (data.get('option_d') or '').strip()
 
-    if not all([movie, hero, heroine, song, clue_1, clue_2, clue_3]):
-        return jsonify({'error': 'All fields are required'}), 400
+    if not movie:
+        return jsonify({'error': 'Movie answer is required'}), 400
+
+    if question_type == 'movie_dialogues':
+        if not all([hero, heroine, song, clue_1, clue_2, clue_3]):
+            return jsonify({'error': 'All fields are required for Movie Dialogues'}), 400
+    elif question_type == 'picture_games':
+        if not all([image_url, option_a, option_b, option_c, option_d]):
+            return jsonify({'error': 'All fields are required for Picture Games'}), 400
 
     try:
         game = Game.query.filter_by(game_code=game_code.upper()).first()
@@ -251,10 +264,16 @@ def submit_question(game_code):
             heroine=heroine,
             heroine_first_letter=get_first_letter(heroine),
             song=song,
-            song_first_letter=get_first_letter(song),
+            song_first_letter=get_first_letter(song) if song else '',
             clue_1=clue_1,
             clue_2=clue_2,
             clue_3=clue_3,
+            question_type=question_type,
+            image_url=image_url if image_url else None,
+            option_a=option_a if option_a else None,
+            option_b=option_b if option_b else None,
+            option_c=option_c if option_c else None,
+            option_d=option_d if option_d else None,
         )
         db.session.add(q)
         gp.has_submitted_question = True

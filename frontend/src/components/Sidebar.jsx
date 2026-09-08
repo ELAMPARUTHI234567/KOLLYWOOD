@@ -15,6 +15,7 @@ import {
   Music,
   Menu,
   X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -22,6 +23,7 @@ const PRIMARY_NAV = [
   { id: 'join', label: 'Join Game', path: '/join', icon: Link2, desc: 'Join via Game ID' },
   { id: 'home', label: 'Home', path: '/', icon: House, desc: 'Main Dashboard' },
   { id: 'create', label: 'Create Game', path: '/create', icon: Gamepad2, desc: 'Host a Multiplayer Game' },
+  { id: 'picture-games', label: 'Picture Games', path: '/create', icon: ImageIcon, desc: 'Setup Picture Game' },
   { id: 'players', label: 'Players', path: '/players', icon: Users, desc: 'View Room Players' },
   { id: 'leaderboard', label: 'Leaderboard', path: '/leaderboard', icon: Trophy, desc: 'Rankings & Scores' },
 ];
