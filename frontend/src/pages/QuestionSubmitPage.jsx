@@ -92,10 +92,20 @@ export default function QuestionSubmitPage() {
 
   const userId = parseInt(sessionStorage.getItem('kw_user_id'));
   const user = JSON.parse(sessionStorage.getItem('kw_user') || '{}');
+  const isHost = sessionStorage.getItem('kw_is_host') === 'true';
 
   // Preselect question type if game was created via Picture Games flow
   const storedMode = sessionStorage.getItem('kw_game_mode');
   const defaultQuestionType = storedMode === 'picture_games' ? 'picture_games' : 'movie_dialogues';
+
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [submittedCount, setSubmittedCount] = useState(0);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+  const [allReady, setAllReady] = useState(false);
+  const [players, setPlayers] = useState([]);
+  const [countdown, setCountdown] = useState(null);
 
   const [correctOption, setCorrectOption] = useState('A');
   const [form, setForm] = useState({
@@ -104,6 +114,61 @@ export default function QuestionSubmitPage() {
     clue_1: '', clue_2: '', clue_3: '',
     image_url: '', option_a: '', option_b: '', option_c: '', option_d: ''
   });
+
+  useEffect(() => {
+    if (!userId || !gameCode) return;
+
+    if (!socket.connected) socket.connect();
+
+    socket.emit('join_game_room', { game_code: gameCode, user_id: userId });
+
+    const handleGameState = (data) => {
+      if (data && data.players) {
+        setPlayers(data.players);
+        setTotalPlayers(data.players.length);
+        const me = data.players.find(p => p.user_id === userId);
+        if (me && me.has_submitted_question) {
+          setSubmitted(true);
+        }
+        const submittedNum = data.players.filter(p => p.has_submitted_question).length;
+        setSubmittedCount(submittedNum);
+        if (submittedNum === data.players.length && data.players.length > 0) {
+          setAllReady(true);
+        }
+      }
+    };
+
+    const handleSubmissionUpdate = (data) => {
+      if (data) {
+        if (data.players) {
+          setPlayers(data.players);
+          setTotalPlayers(data.players.length);
+          const submittedNum = data.players.filter(p => p.has_submitted_question).length;
+          setSubmittedCount(submittedNum);
+          if (submittedNum === data.players.length && data.players.length > 0) {
+            setAllReady(true);
+          }
+        }
+        if (data.submitted_count !== undefined) setSubmittedCount(data.submitted_count);
+        if (data.total_players !== undefined) setTotalPlayers(data.total_players);
+        if (data.all_ready !== undefined) setAllReady(data.all_ready);
+      }
+    };
+
+    const handleGameStarted = () => {
+      navigate(`/game/${gameCode}`);
+    };
+
+    socket.on('game_state', handleGameState);
+    socket.on('submission_update', handleSubmissionUpdate);
+    socket.on('game_started', handleGameStarted);
+
+    return () => {
+      socket.off('game_state', handleGameState);
+      socket.off('submission_update', handleSubmissionUpdate);
+      socket.off('game_started', handleGameStarted);
+    };
+  }, [gameCode, userId, navigate]);
 
   const handleChange = (field) => (e) => {
     const val = e.target.value;
@@ -187,6 +252,23 @@ export default function QuestionSubmitPage() {
   const handleStartGame = () => {
     socket.emit('start_game', { game_code: gameCode, user_id: userId });
   };
+
+  // Fallback Error UI when session is invalid
+  if (!userId || !gameCode) {
+    return (
+      <div className="submit-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', textAlign: 'center' }}>
+        <div className="card" style={{ maxWidth: '480px', width: '100%', padding: '30px' }}>
+          <h2 style={{ color: 'var(--color-gold)', marginBottom: '16px' }}>⚠️ Unable to Load Question Submission</h2>
+          <p style={{ color: '#94a3b8', marginBottom: '24px' }}>
+            Your player session was not found or the game ID is invalid. Please join or create a game session first.
+          </p>
+          <button className="btn btn-gold" onClick={() => navigate('/')}>
+            ← Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Compute first letters preview
   const preview = {
@@ -370,58 +452,62 @@ export default function QuestionSubmitPage() {
                       )}
 
                       {form.question_type === 'songs_bgm' && (
-                         <div className="form-group" style={{marginTop: '10px'}}>
-                           <p style={{color: '#888'}}>For Songs / BGM, you can just fill in the movie name and clues. The Host will play the audio during the game using their Sounds Dashboard!</p>
-                         </div>
+                        <div className="form-group" style={{ marginTop: '10px' }}>
+                          <p style={{ color: '#888' }}>For Songs / BGM, you can just fill in the movie name and clues. The Host will play the audio during the game using their Sounds Dashboard!</p>
+                        </div>
                       )}
 
-                      {/* First letters preview (only relevant for movie dialogues typically) */}
-                      <div className="submit-preview">
-                        <p className="submit-preview__label">Players will see these letters:</p>
-                        <div className="submit-preview__letters">
-                          <div className="submit-preview__letter">
-                            <span className="submit-preview__hint">MOVIE</span>
-                            <span className="submit-preview__char">{preview.movie}</span>
-                          </div>
-                          <div className="submit-preview__letter">
-                            <span className="submit-preview__hint">HERO</span>
-                            <span className="submit-preview__char">{preview.hero}</span>
-                          </div>
-                          <div className="submit-preview__letter">
-                            <span className="submit-preview__hint">HEROINE</span>
-                            <span className="submit-preview__char">{preview.heroine}</span>
-                          </div>
-                          <div className="submit-preview__letter">
-                            <span className="submit-preview__hint">SONG</span>
-                            <span className="submit-preview__char">{preview.song}</span>
+                      {/* First letters preview */}
+                      {form.question_type !== 'picture_games' && (
+                        <div className="submit-preview">
+                          <p className="submit-preview__label">Players will see these letters:</p>
+                          <div className="submit-preview__letters">
+                            <div className="submit-preview__letter">
+                              <span className="submit-preview__hint">MOVIE</span>
+                              <span className="submit-preview__char">{preview.movie}</span>
+                            </div>
+                            <div className="submit-preview__letter">
+                              <span className="submit-preview__hint">HERO</span>
+                              <span className="submit-preview__char">{preview.hero}</span>
+                            </div>
+                            <div className="submit-preview__letter">
+                              <span className="submit-preview__hint">HEROINE</span>
+                              <span className="submit-preview__char">{preview.heroine}</span>
+                            </div>
+                            <div className="submit-preview__letter">
+                              <span className="submit-preview__hint">SONG</span>
+                              <span className="submit-preview__char">{preview.song}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Clues */}
-                    <div className="submit-col-clues">
-                      <p className="submit-clues__title">Clues (Fixed Reveal Timeline)</p>
-                      {[
-                        { n: 1, time: '30s' },
-                        { n: 2, time: '60s' },
-                        { n: 3, time: '90s' },
-                      ].map(({ n, time }) => (
-                        <div key={n} className="form-group">
-                          <label className="form-label" htmlFor={`q-clue-${n}`}>💡 Clue {n} (Revealed at {time})</label>
-                          <input
-                            id={`q-clue-${n}`}
-                            className="form-input"
-                            placeholder={`Enter Clue ${n}…`}
-                            value={form[`clue_${n}`]}
-                            onChange={handleChange(`clue_${n}`)}
-                          />
+                    {form.question_type !== 'picture_games' && (
+                      <div className="submit-col-clues">
+                        <p className="submit-clues__title">Clues (Fixed Reveal Timeline)</p>
+                        {[
+                          { n: 1, time: '30s' },
+                          { n: 2, time: '60s' },
+                          { n: 3, time: '90s' },
+                        ].map(({ n, time }) => (
+                          <div key={n} className="form-group">
+                            <label className="form-label" htmlFor={`q-clue-${n}`}>💡 Clue {n} (Revealed at {time})</label>
+                            <input
+                              id={`q-clue-${n}`}
+                              className="form-input"
+                              placeholder={`Enter Clue ${n}…`}
+                              value={form[`clue_${n}`]}
+                              onChange={handleChange(`clue_${n}`)}
+                            />
+                          </div>
+                        ))}
+                        <div className="submit-clue-note">
+                          Clues are revealed automatically: Clue 1 at 30s, Clue 2 at 60s, and Clue 3 at 90s.
                         </div>
-                      ))}
-                      <div className="submit-clue-note">
-                        Clues are revealed automatically: Clue 1 at 30s, Clue 2 at 60s, and Clue 3 at 90s.
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {error && <p className="submit-error animate-shake">{error}</p>}
